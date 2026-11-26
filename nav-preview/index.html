@@ -193,7 +193,7 @@ const avEl=(url,name,sid,sz)=>{ sz=sz||38; const base=`width:${sz}px;height:${sz
 const bub=(mine,txt,who,ts,photo,sid)=>`<div style="display:flex;justify-content:${mine?'flex-start':'flex-end'};align-items:flex-end;gap:8px;margin:8px 0">${avEl(photo,who,sid)}<div style="max-width:78%;padding:10px 14px;border-radius:16px;${mine?'background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff':'background:rgba(148,163,184,.18);color:#e5e7eb'}"><div class="small" style="opacity:.9;margin-bottom:3px"><b>${h(who)}</b></div><div style="white-space:pre-wrap;word-break:break-word">${h(txt)}</div><div class="small" style="opacity:.7;margin-top:4px">${new Date(ts).toLocaleString('ar-EG')}</div></div></div>`;
 async function viewChat(st){
   const { data } = await sb.from('chat_messages').select('*').eq('student_id',st.id).order('created_at').limit(300);
-  const myUrl=await avatarUrl(st.photo_path); const { data: si } = await sb.rpc('chat_staff_info'); const stf=(si&&si[0])||{}; const stUrl=(await avatarUrl(stf.photo_path))||'/media/icon-192.png';
+  const myUrl=await avatarUrl(st.photo_path); const { data: si } = await sb.rpc('chat_staff_info'); const stf=(si&&si[0])||{}; const stUrl=(await avatarUrl(stf.photo_path))||'/media/instructor-avatar.jpg';
   const list=(data||[]).map(x=>x.sender==='student'?bub(true,x.body,st.full_name,x.created_at,myUrl):bub(false,x.body,x.sender_name,x.created_at,stUrl)).join('')||'<p class="small" style="margin:12px 0">ابعت سؤالك أو مشكلتك هنا والمدرب هيرد عليك. هتلاقي الرد هنا وهيجيلك إشعار 🔔.</p>';
   setMsg(`<div class="card" style="max-width:640px;margin:0 auto"><h2>💬 شات مع المدرب</h2><p class="small">اسأل في أي حاجة علمية أو مشكلة في المنصة. الرد مش فوري، بس هيوصلك إشعار.</p><div id="chatBox" style="max-height:52vh;overflow-y:auto;margin:12px 0;padding:4px">${list}</div><div id="cm"></div><textarea id="chatIn" rows="3" maxlength="2000" placeholder="اكتب رسالتك هنا..."></textarea><button class="btn" style="margin-top:10px" onclick="sendChat()">📤 ابعت</button></div>`);
   const bx=document.getElementById('chatBox'); bx.scrollTop=bx.scrollHeight;
@@ -211,7 +211,7 @@ async function adminChats(openSid){
   const box=document.getElementById('chatsBody'); if(!box) return;
   const { data, error } = await sb.from('chat_messages').select('*').order('created_at').limit(2000);
   if(error){ box.innerHTML=msgBox('مقدرتش أحمّل الرسائل','err'); return; }
-  const meId=((await sb.auth.getSession()).data.session||{user:{}}).user.id; const meRow=_students.find(x=>x.id===meId)||{}; const meUrl=(await avatarUrl(meRow.photo_path))||'/media/icon-192.png'; const pc={}; const stU=async id=>{ if(!(id in pc)){ const r=_students.find(x=>x.id===id)||{}; pc[id]=await avatarUrl(r.photo_path); } return pc[id]; };
+  const meId=((await sb.auth.getSession()).data.session||{user:{}}).user.id; const meRow=_students.find(x=>x.id===meId)||{}; const meUrl=(await avatarUrl(meRow.photo_path))||'/media/instructor-avatar.jpg'; const pc={}; const stU=async id=>{ if(!(id in pc)){ const r=_students.find(x=>x.id===id)||{}; pc[id]=await avatarUrl(r.photo_path); } return pc[id]; };
   const by={}; (data||[]).forEach(x=>{ (by[x.student_id]=by[x.student_id]||[]).push(x); });
   const unreadTotal=(data||[]).filter(x=>x.sender==='student'&&!x.read_at).length;
   const tl=document.querySelector('#tabs button[onclick*="chats"] .tl'); if(tl) tl.textContent='رسائل الطلاب'+(unreadTotal?' ('+unreadTotal+')':'');
@@ -687,7 +687,7 @@ async function viewAdmin(user, role){
     document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
   }
-  { const me=(typeof _students!=='undefined'&&_students||[]).find(x=>x.id===user.id); const pu=me?await avatarUrl(me.photo_path):'';
+  { const me=(typeof _students!=='undefined'&&_students||[]).find(x=>x.id===user.id); const pu=me?((await avatarUrl(me.photo_path))||(isMain?'/media/instructor-avatar.jpg':'')):'';
     const form = me ? `<div id="pm" style="margin-top:12px"></div>
     <div style="text-align:center;margin:14px 0"><img id="pimg" src="${pu}" style="${pu?'':'display:none;'}width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa" alt=""><div id="pph" style="${pu?'display:none;':''}font-size:64px">🙂</div></div>
     <label>الصورة الشخصية (jpg / png حتى 2 ميجا)</label><input id="pphoto" type="file" accept="image/jpeg,image/png,image/webp">
