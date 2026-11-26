@@ -202,7 +202,7 @@ async function sendChat(){
   const t=(document.getElementById('chatIn').value||'').trim(); if(!t){ m('cm', msgBox('اكتب رسالتك الأول','err')); return; }
   const { error } = await sb.rpc('chat_send',{ p_body:t });
   if(error){ m('cm', msgBox(/too many/.test(error.message)?'بعتّ رسائل كتير في وقت قصير، استنى شوية وجرّب تاني.':'الرسالة ما اتبعتتش، جرّب تاني.','err')); return; }
-  const me=(window._me)||{}; studentView='chat'; await route();
+  studentView='chat'; await route();
 }
 async function adminChats(openSid){
   const box=document.getElementById('chatsBody'); if(!box) return;
@@ -390,7 +390,7 @@ async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
   const active = !!(en && en.status === 'active');
-  if(!['home','free','courses','lectures','wallet','profile','inbox'].includes(studentView)) studentView='home';
+  if(!['home','free','courses','lectures','wallet','profile','inbox','chat'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
   if(studentView==='courses' && active) studentView='lectures';
   renderTabs('student', TAB_OF[studentView]);
