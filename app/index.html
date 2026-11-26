@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126r';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126s';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -99,6 +99,46 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const app = document.getElementById('app');
 const h = s => { const d=document.createElement('div'); d.innerText=s==null?'':String(s); return d.innerHTML; };
 let studentView='home';
+const GOVS=['القاهرة','الجيزة','الإسكندرية','القليوبية','الشرقية','الدقهلية','البحيرة','الغربية','المنوفية','كفر الشيخ','دمياط','بورسعيد','الإسماعيلية','السويس','الفيوم','بني سويف','المنيا','أسيوط','سوهاج','قنا','الأقصر','أسوان','البحر الأحمر','الوادي الجديد','مطروح','شمال سيناء','جنوب سيناء'];
+function goProfile(){ studentView='profile'; window.scrollTo(0,0); route(); }
+async function avatarUrl(path){ if(!path) return ''; const { data } = await sb.storage.from('avatars').createSignedUrl(path, 3600); return data ? data.signedUrl : ''; }
+async function viewProfile(st){
+  const url = await avatarUrl(st && st.photo_path);
+  setMsg(`
+  <div class="card" style="max-width:640px;margin:0 auto 18px">
+    <h2>👤 ملفي الشخصي</h2>${codeChip(st).replace(/<button[^>]*>.*?<\/button>/,'')}
+    <div id="pm" style="margin-top:12px"></div>
+    <div style="text-align:center;margin:14px 0"><img id="pimg" src="${url}" style="${url?'':'display:none;'}width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa" alt=""><div id="pph" style="${url?'display:none;':''}font-size:64px">🙂</div></div>
+    <label>الصورة الشخصية (jpg / png حتى 2 ميجا)</label><input id="pphoto" type="file" accept="image/jpeg,image/png,image/webp">
+    <label>الاسم</label><input id="pname" value="${h(st.full_name||'')}">
+    <label>السن</label><input id="page" dir="ltr" inputmode="numeric" value="${h(st.age||'')}">
+    <label>رقم موبايلك</label><input id="pphone" dir="ltr" inputmode="numeric" value="${h(st.phone||'')}">
+    <label>رقم موبايل ولي الأمر</label><input id="pguard" dir="ltr" inputmode="numeric" value="${h(st.guardian_phone||'')}">
+    <label>المحافظة</label><select id="pgov"><option value="">اختار المحافظة</option>${GOVS.map(g=>`<option ${g===st.governorate?'selected':''}>${g}</option>`).join('')}</select>
+    <label>العنوان</label><input id="paddr" value="${h(st.address||'')}">
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="saveProfile('${st.id}')">💾 حفظ</button><button class="btn ghost" onclick="goHome()">← رجوع</button></div>
+  </div>`);
+}
+function resizeImage(file){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file); img.onload=()=>{ const M=512; const k=Math.min(1,M/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height); c.toBlob(b=>b?res(b):rej(new Error('x')),'image/jpeg',0.85); URL.revokeObjectURL(u); }; img.onerror=()=>rej(new Error('img')); img.src=u; }); }
+async function saveProfile(uid){
+  const name=v('pname'), phone=normPhone(v('pphone')), guard=normPhone(v('pguard')), age=parseInt(normPhone(v('page')));
+  if(name.length<2){ m('pm', msgBox('اكتب اسمك','err')); return; }
+  if(!/^01[0125][0-9]{8}$/.test(phone)){ m('pm', msgBox('رقم موبايلك لازم يكون رقم مصري صحيح (11 رقم بيبدأ بـ 01)','err')); return; }
+  if(guard && !/^01[0125][0-9]{8}$/.test(guard)){ m('pm', msgBox('رقم ولي الأمر لازم يكون رقم مصري صحيح','err')); return; }
+  if(v('page') && !(age>=5 && age<=100)){ m('pm', msgBox('السن لازم يكون بين 5 و 100','err')); return; }
+  const upd = { full_name: name, phone, guardian_phone: guard||null, governorate: document.getElementById('pgov').value||null, address: v('paddr')||null, age: isNaN(age)?null:age };
+  const f=document.getElementById('pphoto').files[0];
+  if(f){
+    if(!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size>2*1024*1024){ m('pm', msgBox('الصورة لازم تكون jpg أو png وأقل من 2 ميجا','err')); return; }
+    try{ const blob=await resizeImage(f); const path=uid+'/avatar.jpg';
+      const { error:ue } = await sb.storage.from('avatars').upload(path, blob, { upsert:true, contentType:'image/jpeg' });
+      if(ue){ m('pm', msgBox('الصورة ما اترفعتش، جرّب تاني','err')); return; }
+      upd.photo_path = path; }catch(e){ m('pm', msgBox('مقدرتش أقرأ الصورة، جرّب صورة تانية','err')); return; }
+  }
+  const { error } = await sb.from('students').update(upd).eq('id', uid);
+  if(error){ m('pm', msgBox('حصل خطأ في الحفظ، راجع البيانات وجرّب تاني','err')); return; }
+  studentView='home'; await route();
+}
 function goHome(){ studentView='home'; window.scrollTo(0,0); route(); }
 function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
 function setMsg(m){ app.innerHTML = m; }
@@ -129,7 +169,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126r" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126s" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -259,6 +299,7 @@ async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
   const active = !!(en && en.status === 'active');
+  if(studentView==='profile'){ viewProfile(st); return; }
   if(studentView==='free'){ viewFree(st); return; }
   if(!active){
     studentView='home';
@@ -333,7 +374,7 @@ async function playLecture(id){
   box.classList.remove('hidden');
 }
 const COURSE_PRICE = 1300;
-function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span></p>` : ''; }
+function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
 function fmtMoney(n){ n=Number(n||0); return Number.isInteger(n)?String(n):n.toFixed(2); }
 async function buyCourse(){
   if(!confirm('هتشتري الكورس بـ '+COURSE_PRICE+' جنيه من رصيدك. متأكد؟')) return;
@@ -347,6 +388,24 @@ function codeLookup(){
   const c=normPhone(document.getElementById('tcode').value);
   const st=_students.find(x=>x.student_code===c);
   document.getElementById('tname').innerHTML = !c ? '' : st ? `<span class="badge active">✅ ${h(st.full_name)} (رصيده الحالي ${fmtMoney(st.balance)})</span>` : '<span class="badge pending">مفيش طالب بالكود ده</span>';
+}
+async function adminProfile(sid){
+  const { data: st } = await sb.from('students').select('*, enrollments(status)').eq('id', sid).single();
+  if(!st){ alert('الطالب مش موجود'); return; }
+  const url = await avatarUrl(st.photo_path);
+  const act=(st.enrollments&&st.enrollments.status)==='active';
+  const row=(k,val)=>`<tr><td class="small">${k}</td><td><b>${h(val||'—')}</b></td></tr>`;
+  setMsg(`<div class="card" style="max-width:700px;margin:0 auto">
+    <h2>👤 ملف الطالب</h2>
+    <div style="text-align:center;margin:14px 0">${url?`<img src="${url}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa">`:'<div style="font-size:64px">🙂</div>'}</div>
+    <table>${row('الاسم',st.full_name)}${row('الكود',st.student_code)}${row('الإيميل',st.email)}${row('السن',st.age)}${row('موبايل الطالب',st.phone)}${row('موبايل ولي الأمر',st.guardian_phone)}${row('المحافظة',st.governorate)}${row('العنوان',st.address)}${row('الرصيد',fmtMoney(st.balance)+' جنيه')}${row('الحالة',act?'مفعّل':'منتظر')}</table>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" onclick="route()">← رجوع للوحة</button>${st.phone?`<a class="btn wa" target="_blank" href="https://wa.me/2${h(st.phone)}">واتساب الطالب</a>`:''}</div>
+  </div>`);
+}
+function searchStudents(){
+  const q=document.getElementById('sq').value.trim().toLowerCase(); const qn=normPhone(q);
+  const r=!q?[]:_students.filter(x=>(qn&&(x.student_code||'').includes(qn))||(x.full_name||'').toLowerCase().includes(q)||(x.email||'').toLowerCase().includes(q)).slice(0,8);
+  document.getElementById('sres').innerHTML = !q?'':(r.length?r.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)"><span>${h(x.full_name)} <span class="small" dir="ltr">(${h(x.student_code)})</span></span><button class="btn" onclick="adminProfile('${x.id}')">فتح الملف</button></div>`).join(''):'<p class="small">مفيش نتيجة</p>');
 }
 async function topUpByCode(){
   const c=normPhone(document.getElementById('tcode').value);
@@ -393,6 +452,7 @@ async function viewAdmin(user){
     <td>${h(s.full_name)}</td><td dir="ltr"><b>${h(s.student_code||'')}</b></td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
     <td><b>${fmtMoney(s.balance)}</b></td><td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
     <td style="white-space:nowrap">${s.email===ADMIN_EMAIL?'<span class="small">الأدمن</span>':`
+      <button class="btn" onclick="adminProfile('${s.id}')">الملف</button>
       <button class="btn green" ${st==='active'?'disabled':''} onclick="setActive('${s.id}', true)">تفعيل</button>
       <button class="btn ghost" ${st==='active'?'':'disabled'} onclick="setActive('${s.id}', false)">إلغاء التفعيل</button>
       <button class="btn red" onclick="deleteStudent('${s.id}','${h(s.full_name).replace(/'/g,'')}')">حذف الحساب</button>`}</td></tr>`; }).join('');
@@ -416,6 +476,11 @@ async function viewAdmin(user){
   <div class="card">
     <h2 style="margin-bottom:14px">📩 طلبات التفعيل (${(reqs||[]).length})</h2>
     ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">مفيش طلبات منتظرة.</p>'}
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:14px">🔎 فتح ملف طالب</h2>
+    <input id="sq" placeholder="اكتب الكود أو الاسم أو الإيميل" oninput="searchStudents()">
+    <div id="sres" style="margin-top:8px"></div>
   </div>
   <div class="card" id="topupCard">
     <h2 style="margin-bottom:14px">💰 شحن رصيد طالب</h2>
