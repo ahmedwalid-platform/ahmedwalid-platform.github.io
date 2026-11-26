@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126n';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126o';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +126,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126n" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126o" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -216,7 +216,7 @@ async function logout(){ await sb.auth.signOut(); location.reload(); }
 
 function pwCard(){
   return `<div class="card" style="max-width:640px;margin:22px auto"><h3 style="margin-bottom:10px">🔑 تغيير كلمة السر</h3>
-    <div id="pwmsg"></div><label>كلمة السر الجديدة (8 حروف على الأقل)</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('newpass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
+    <div id="pwmsg"></div><label>كلمة السر الجديدة (6 حروف على الأقل)</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('newpass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
     <button class="btn" onclick="changeAdminPassword()">حفظ كلمة السر</button></div>`;
 }
 function freeCard(){
@@ -435,7 +435,7 @@ async function deleteStudent(sid, name){
 }
 async function changeAdminPassword(){
   const p1=document.getElementById('newpass').value;
-  if(p1.length<8){ m('pwmsg', msgBox('كلمة السر لازم تكون 8 حروف على الأقل','err')); return; }
+  if(p1.length<6){ m('pwmsg', msgBox('كلمة السر لازم تكون 6 حروف على الأقل','err')); return; }
   const { error } = await sb.auth.updateUser({ password: p1 });
   if(error){ m('pwmsg', msgBox(h(error.message),'err')); return; }
   document.getElementById('newpass').value='';
