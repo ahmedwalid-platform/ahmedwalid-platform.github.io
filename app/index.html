@@ -188,10 +188,12 @@ const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكور
 const TAB_OF={chat:'chat',home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
 function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.className=L.length>5?'scroll':''; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
 
-const bub=(mine,txt,who,ts)=>`<div style="display:flex;justify-content:${mine?'flex-start':'flex-end'};margin:8px 0"><div style="max-width:82%;padding:10px 14px;border-radius:16px;${mine?'background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff':'background:rgba(148,163,184,.18);color:#e5e7eb'}"><div class="small" style="opacity:.8;margin-bottom:3px">${h(who)}</div><div style="white-space:pre-wrap;word-break:break-word">${h(txt)}</div><div class="small" style="opacity:.7;margin-top:4px">${new Date(ts).toLocaleString('ar-EG')}</div></div></div>`;
+const avEl=(url,name,sid,sz)=>{ sz=sz||38; const base=`width:${sz}px;height:${sz}px;border-radius:50%;flex:0 0 ${sz}px;object-fit:cover;border:2px solid #a78bfa;${sid?'cursor:pointer;':''}`; const clk=sid?` onclick="event.stopPropagation();adminProfile('${sid}')" title="فتح ملف الطالب"`:''; return url?`<img src="${url}" style="${base}"${clk} alt="">`:`<div style="${base}display:flex;align-items:center;justify-content:center;background:#4c1d95;color:#fff;font-weight:800"${clk}>${h((name||'?').trim().charAt(0))}</div>`; };
+const bub=(mine,txt,who,ts,photo,sid)=>`<div style="display:flex;justify-content:${mine?'flex-start':'flex-end'};align-items:flex-end;gap:8px;margin:8px 0">${avEl(photo,who,sid)}<div style="max-width:78%;padding:10px 14px;border-radius:16px;${mine?'background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff':'background:rgba(148,163,184,.18);color:#e5e7eb'}"><div class="small" style="opacity:.9;margin-bottom:3px"><b>${h(who)}</b></div><div style="white-space:pre-wrap;word-break:break-word">${h(txt)}</div><div class="small" style="opacity:.7;margin-top:4px">${new Date(ts).toLocaleString('ar-EG')}</div></div></div>`;
 async function viewChat(st){
   const { data } = await sb.from('chat_messages').select('*').eq('student_id',st.id).order('created_at').limit(300);
-  const list=(data||[]).map(x=>bub(x.sender==='student',x.body,x.sender==='student'?'أنا':x.sender_name,x.created_at)).join('')||'<p class="small" style="margin:12px 0">ابعت سؤالك أو مشكلتك هنا والمدرب هيرد عليك. هتلاقي الرد هنا وهيجيلك إشعار 🔔.</p>';
+  const myUrl=await avatarUrl(st.photo_path); const { data: si } = await sb.rpc('chat_staff_info'); const stf=(si&&si[0])||{}; const stUrl=(await avatarUrl(stf.photo_path))||'/media/icon-192.png';
+  const list=(data||[]).map(x=>x.sender==='student'?bub(true,x.body,st.full_name,x.created_at,myUrl):bub(false,x.body,x.sender_name,x.created_at,stUrl)).join('')||'<p class="small" style="margin:12px 0">ابعت سؤالك أو مشكلتك هنا والمدرب هيرد عليك. هتلاقي الرد هنا وهيجيلك إشعار 🔔.</p>';
   setMsg(`<div class="card" style="max-width:640px;margin:0 auto"><h2>💬 شات مع المدرب</h2><p class="small">اسأل في أي حاجة علمية أو مشكلة في المنصة. الرد مش فوري، بس هيوصلك إشعار.</p><div id="chatBox" style="max-height:52vh;overflow-y:auto;margin:12px 0;padding:4px">${list}</div><div id="cm"></div><textarea id="chatIn" rows="3" maxlength="2000" placeholder="اكتب رسالتك هنا..."></textarea><button class="btn" style="margin-top:10px" onclick="sendChat()">📤 ابعت</button></div>`);
   const bx=document.getElementById('chatBox'); bx.scrollTop=bx.scrollHeight;
   if((data||[]).some(x=>x.sender==='staff'&&!x.read_at)) await sb.rpc('chat_mark_read');
@@ -208,6 +210,7 @@ async function adminChats(openSid){
   const box=document.getElementById('chatsBody'); if(!box) return;
   const { data, error } = await sb.from('chat_messages').select('*').order('created_at').limit(2000);
   if(error){ box.innerHTML=msgBox('مقدرتش أحمّل الرسائل','err'); return; }
+  const meId=((await sb.auth.getSession()).data.session||{user:{}}).user.id; const meRow=_students.find(x=>x.id===meId)||{}; const meUrl=(await avatarUrl(meRow.photo_path))||'/media/icon-192.png'; const pc={}; const stU=async id=>{ if(!(id in pc)){ const r=_students.find(x=>x.id===id)||{}; pc[id]=await avatarUrl(r.photo_path); } return pc[id]; };
   const by={}; (data||[]).forEach(x=>{ (by[x.student_id]=by[x.student_id]||[]).push(x); });
   const unreadTotal=(data||[]).filter(x=>x.sender==='student'&&!x.read_at).length;
   const tl=document.querySelector('#tabs button[onclick*="chats"] .tl'); if(tl) tl.textContent='رسائل الطلاب'+(unreadTotal?' ('+unreadTotal+')':'');
@@ -215,13 +218,15 @@ async function adminChats(openSid){
   const sid=window._chatOpen;
   if(sid && by[sid]){
     const arr=by[sid]; const nm=(arr.find(x=>x.sender==='student')||{}).sender_name||((_students.find(x=>x.id===sid)||{}).full_name)||'طالب';
-    box.innerHTML=`<button class="btn ghost" onclick="adminChats(null)">← كل المحادثات</button><h3 style="margin:12px 0">${h(nm)}</h3><div id="aChatBox" style="max-height:50vh;overflow-y:auto">${arr.map(x=>bub(x.sender==='staff',x.body,x.sender==='staff'?x.sender_name:nm,x.created_at)).join('')}</div><div id="am"></div><textarea id="aIn" rows="3" maxlength="2000" placeholder="اكتب ردك..."></textarea><button class="btn" style="margin-top:10px" onclick="adminReply('${sid}')">📤 رد</button>`;
+    const su=await stU(sid);
+    box.innerHTML=`<button class="btn ghost" onclick="adminChats(null)">← كل المحادثات</button><div style="display:flex;align-items:center;gap:10px;margin:12px 0">${avEl(su,nm,sid,52)}<div><h3>${h(nm)}</h3><span class="small">دوس على الصورة تفتح ملف الطالب</span></div></div><div id="aChatBox" style="max-height:50vh;overflow-y:auto">${arr.map(x=>x.sender==='staff'?bub(true,x.body,x.sender_name,x.created_at,meUrl):bub(false,x.body,nm,x.created_at,su,sid)).join('')}</div><div id="am"></div><textarea id="aIn" rows="3" maxlength="2000" placeholder="اكتب ردك..."></textarea><button class="btn" style="margin-top:10px" onclick="adminReply('${sid}')">📤 رد</button>`;
     const ab=document.getElementById('aChatBox'); ab.scrollTop=ab.scrollHeight;
     if(arr.some(x=>x.sender==='student'&&!x.read_at)){ await sb.rpc('chat_mark_read',{ p_student:sid }); if(tl){ const left=unreadTotal-arr.filter(x=>x.sender==='student'&&!x.read_at).length; tl.textContent='رسائل الطلاب'+(left?' ('+left+')':''); } }
     return;
   }
   const rows=Object.entries(by).map(([id,arr])=>{ const last=arr[arr.length-1]; const un=arr.filter(x=>x.sender==='student'&&!x.read_at).length; const nm=(arr.find(x=>x.sender==='student')||{}).sender_name||'طالب'; return {id,nm,last,un}; }).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
-  box.innerHTML = rows.length ? rows.map(r=>`<div class="notif ${r.un?'new':''}" style="cursor:pointer" onclick="adminChats('${r.id}')"><b>${h(r.nm)}</b>${r.un?` <span class="badge active">${r.un} جديد</span>`:''}<p style="margin-top:6px">${h(r.last.body.slice(0,90))}</p><p class="small" style="margin-top:4px">${new Date(r.last.created_at).toLocaleString('ar-EG')}</p></div>`).join('') : '<p class="small">مفيش رسائل من الطلاب لسه.</p>';
+  for(const r of rows) r.u=await stU(r.id);
+  box.innerHTML = rows.length ? rows.map(r=>`<div class="notif ${r.un?'new':''}" style="cursor:pointer;display:flex;gap:12px;align-items:center" onclick="adminChats('${r.id}')">${avEl(r.u,r.nm,r.id,46)}<div style="flex:1;min-width:0"><b>${h(r.nm)}</b>${r.un?` <span class="badge active">${r.un} جديد</span>`:''}<p style="margin-top:6px">${h(r.last.body.slice(0,90))}</p><p class="small" style="margin-top:4px">${new Date(r.last.created_at).toLocaleString('ar-EG')}</p></div></div>`).join('') : '<p class="small">مفيش رسائل من الطلاب لسه.</p>';
 }
 async function adminReply(sid){
   const t=(document.getElementById('aIn').value||'').trim(); if(!t){ m('am', msgBox('اكتب الرد الأول','err')); return; }
