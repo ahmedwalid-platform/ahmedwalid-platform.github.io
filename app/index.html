@@ -50,11 +50,6 @@ a{color:#818cf8;font-weight:700}
 .hero p{color:#cdd3e8;font-size:16px;margin-bottom:8px}
 .hero ul{margin:10px 22px 0;line-height:2;font-size:15px;color:#cdd3e8}
 .stat{display:inline-block;background:rgba(10,14,26,.7);border:1px solid rgba(120,130,255,.3);border-radius:12px;padding:8px 16px;margin:4px;font-size:14px;font-weight:700;color:#c7cdfb}
-.instructor{display:flex;gap:18px;align-items:center;background:rgba(17,23,42,.85);border:1px solid rgba(120,130,255,.2);border-radius:20px;padding:18px 20px;margin-top:18px}
-.instructor img{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid rgba(129,140,248,.55);box-shadow:0 6px 20px rgba(0,0,0,.4);flex-shrink:0}
-.instructor h3{font-size:18px;font-weight:900}
-.instructor .role{color:#34d399;font-weight:700;font-size:14px;margin:2px 0 6px}
-.instructor p{font-size:13.5px;color:#a3aac4;line-height:1.85}
 .split{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;align-items:start}
 @media(max-width:860px){.split{grid-template-columns:1fr}}
 </style>
@@ -83,16 +78,6 @@ function isAdmin(user){ return user && user.email === ADMIN_EMAIL; }
 function v(id){ return document.getElementById(id).value.trim(); }
 function m(id, html){ document.getElementById(id).innerHTML = html; }
 
-function instructorCard(){
-  return `<div class="instructor">
-    <img src="/media/instructor.jpg" alt="المدرب أحمد وليد">
-    <div>
-      <h3>المدرب: أحمد وليد</h3>
-      <div class="role">مدرب فوتوشوب أونلاين للمبتدئين</div>
-      <p>بياخدك من الصفر لحد ما تعمل مشروعك الأول بنفسك: أساسيات البرنامج والأدوات، تعديل الصور، تصميم بوستات سوشيال ميديا ومطبوعات، وهوية بصرية. 4 جلسات لايف على Zoom، ومشروع ختامي وشهادة إتمام في آخر الكورس.</p>
-    </div>
-  </div>`;
-}
 function courseHero(){
   return `<div class="hero">
     <h2>دورة أساسيات الفوتوشوب من الصفر 🎨</h2>
@@ -114,7 +99,7 @@ function courseHero(){
 function viewLogin(){
   setMsg(`
   <div class="split">
-    <div>${courseHero()}${instructorCard()}</div>
+    ${courseHero()}
     <div class="card" style="margin-top:6px">
       <h2 style="margin-bottom:18px">تسجيل الدخول</h2>
       <div id="m"></div>
@@ -130,7 +115,7 @@ function viewLogin(){
 function viewSignup(){
   setMsg(`
   <div class="split">
-    <div>${courseHero()}${instructorCard()}</div>
+    ${courseHero()}
     <div class="card" style="margin-top:6px">
       <h2 style="margin-bottom:18px">إنشاء حساب جديد</h2>
       <div id="m"></div>
@@ -165,7 +150,7 @@ async function viewStudent(user){
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
     setMsg(`
-    <div>${courseHero()}${instructorCard()}</div>
+    ${courseHero()}
     <div class="card" style="max-width:640px;margin:22px auto">
       <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
       <p style="margin:12px 0">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
