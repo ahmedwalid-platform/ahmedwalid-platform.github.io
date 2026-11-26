@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126g';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126h';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,8 +119,6 @@ function courseHero(cta){
       <li>تصميم بوستات سوشيال ميديا وإعلانات ومطبوعات</li>
       <li>إزاي تعمل هوية بصرية ومشروع كامل بنفسك</li>
     </ul>
-    <div class="freevid"><h3 style="margin:18px 0 10px">🎬 فيديو تعريفي مجاني عن الكورس</h3>
-      <video id="freeIntro" controls preload="metadata" playsinline src="https://ynlyugdjbncerwemyihg.supabase.co/storage/v1/object/public/public-intro/intro.mp4" style="width:100%;max-height:520px;border-radius:16px;background:#000"></video></div>
     ${cta||''}
   </div>`;
 }
@@ -128,7 +126,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126g" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126h" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -137,7 +135,7 @@ function instructorCard(){
 
 function viewLogin(){
   setMsg(`
-  ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ دخول الكورس (للمشتركين)</button><p class="small" style="margin-top:8px">الفيديو التعريفي فوق مجاني للكل. محاضرات الكورس بتفتح للمشتركين المفعّلين بس.</p></div>`)}
+  ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ إنشاء حساب / دخول</button><p class="small" style="margin-top:8px">اعمل حساب مجاني وشوف الكورس التعريفي، وبعدها اشترك في الكورس الأساسي.</p></div>`)}
   <div class="split">
     ${instructorCard()}
     <div class="card" style="margin-top:6px">
@@ -184,17 +182,46 @@ async function doLogin(){
 }
 async function logout(){ await sb.auth.signOut(); location.reload(); }
 
+function freeCard(){
+  return `<div class="card" style="border:1px solid rgba(52,211,153,.5);margin-bottom:20px">
+    <h2>🎁 كورس تعريفي مجاني</h2>
+    <p class="small" style="margin:8px 0 14px">فيديو شرح عن الكورس ومحتواه وطريقة الاشتراك. مجاني لأي حد عامل حساب.</p>
+    <button class="btn green" id="enterFreeBtn" onclick="enterFree()">▶ دخول الكورس المجاني</button>
+  </div>`;
+}
+function enterFree(){ studentView='free'; window.scrollTo(0,0); route(); }
+async function playFree(boxId){
+  const box = document.getElementById(boxId);
+  const { data: s, error } = await sb.storage.from('free-course').createSignedUrl('intro.mp4', 3600);
+  if(error || !s){ box.innerHTML = msgBox('حصلت مشكلة في تحميل الفيديو، جرّب تاني.','err'); box.classList.remove('hidden'); return; }
+  box.innerHTML = `<video id="freeVideo" controls preload="metadata" playsinline src="${h(s.signedUrl)}"></video>`;
+  box.classList.remove('hidden');
+}
+function viewFree(st){
+  setMsg(`
+  <div class="card">
+    <h2>🎁 الكورس التعريفي المجاني</h2>
+    <p class="small" style="margin:8px 0 14px">أهلاً ${h(st ? st.full_name : '')}، اتفرج على الفيديو ده عشان تعرف الكورس هيعلّمك إيه.</p>
+    <button class="btn ghost" onclick="goHome()">← رجوع</button>
+  </div>
+  <div class="card"><h3 style="margin-bottom:12px">🎬 فيديو تعريفي عن الكورس</h3><div class="video-box" id="freeBox"></div></div>`);
+  playFree('freeBox');
+}
 async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
-  if(!en || en.status !== 'active'){
+  const active = !!(en && en.status === 'active');
+  if(studentView==='free'){ viewFree(st); return; }
+  if(!active){
+    studentView='home';
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
     setMsg(`
-    ${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس (بعد التفعيل)</button><p class="small" style="margin-top:8px">هيتفتحلك أول ما الدفع يتراجع ويتم تفعيل حسابك.</p></div>`)}
+    <div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2><p class="small" style="margin-top:8px">ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي.</p></div>
+    ${freeCard()}
+    ${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس الأساسي (بعد التفعيل)</button><p class="small" style="margin-top:8px">هيتفتحلك أول ما الدفع يتراجع ويتم تفعيل حسابك.</p></div>`)}
     <div class="card" style="max-width:640px;margin:22px auto">
-      <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
-      <p style="margin:12px 0">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
+      <p style="margin:0 0 12px">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
       ${pending ? msgBox('طلبك وصل ✅ هيتم تفعيل حسابك بعد مراجعة الدفع.','ok') : ''}
       <div class="card" style="background:rgba(10,14,26,.6)">
         <h3 style="margin-bottom:10px">💳 طريقة الدفع والاشتراك</h3>
@@ -212,8 +239,9 @@ async function viewStudent(user){
   }
   if(studentView==='home'){
     setMsg(`
-    ${courseHero(`<div style="margin-top:16px"><span class="badge active">مشترك مفعّل ✅</span><div style="margin-top:14px"><button class="btn" id="enterCourseBtn" onclick="enterCourse()">▶ الدخول للكورس</button></div></div>`)}
-    <div class="card" style="max-width:640px;margin:22px auto"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2><p class="small" style="margin-top:8px">اضغط «الدخول للكورس» عشان تشوف المحاضرات.</p></div>`);
+    <div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2></div>
+    ${freeCard()}
+    ${courseHero(`<div style="margin-top:16px"><span class="badge active">مشترك مفعّل ✅</span><div style="margin-top:14px"><button class="btn" id="enterCourseBtn" onclick="enterCourse()">▶ الدخول للكورس</button></div></div>`)}`);
     return;
   }
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
@@ -231,7 +259,7 @@ async function viewStudent(user){
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
     <button class="btn ghost" onclick="goHome()">← رجوع لصفحة الكورس</button>
   </div>
-  <div class="card"><h2 style="margin-bottom:16px">📚 المحاضرات</h2>${list}</div>`);
+  <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الكورس</h2>${list}</div>`);
 }
 async function playLecture(id){
   const box = document.getElementById('vid-'+id);
@@ -286,7 +314,10 @@ async function viewAdmin(user){
     </div>`).join('') || '<p class="small">المحاضرات هتتضاف قريبا</p>';
   setMsg(`
   <div class="card" id="courseCard">
-    <h2 style="margin-bottom:14px">🎬 دخول الكورس (معاينة الأدمن)</h2>
+    <h2 style="margin-bottom:14px">🎬 معاينة الأدمن</h2>
+    <div class="lecture"><h3>🎁 الكورس التعريفي المجاني</h3><p class="small">فيديو الشرح، متاح لأي حد عامل حساب.</p>
+      <button class="btn" style="margin-top:12px" onclick="playFree('vid-free')">▶ شغّل الفيديو التعريفي</button><div class="video-box hidden" id="vid-free"></div></div>
+    <h3 style="margin:18px 0 10px">📚 محاضرات الكورس الأساسي (مدفوع)</h3>
     ${courseList}
   </div>
   <div class="card">
