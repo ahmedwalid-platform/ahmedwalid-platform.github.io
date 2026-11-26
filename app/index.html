@@ -99,6 +99,7 @@ header h1{display:flex;align-items:center;gap:10px}
 @keyframes lgShine{0%{background-position:150% 0}100%{background-position:-100% 0}}
 @keyframes lgBar{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 @media(max-width:760px){.logo-top{height:30px}}
+#botFab{position:fixed;bottom:18px;left:18px;z-index:60;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;font-size:28px;color:#fff;background:linear-gradient(135deg,#ec4899,#8b5cf6);box-shadow:0 6px 24px rgba(139,92,246,.6)}#botBox{position:fixed;bottom:88px;left:18px;z-index:60;width:min(360px,calc(100vw - 36px));max-height:70vh;display:none;flex-direction:column;background:#12102a;border:1px solid rgba(167,139,250,.5);border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.6);overflow:hidden}#botBox.open{display:flex}#botMsgs{padding:10px;overflow-y:auto;flex:1;min-height:180px}#botBox textarea{margin:0;border-radius:0;resize:none}
 .bell{position:relative;background:rgba(139,92,246,.12);border:1px solid rgba(167,139,250,.4);border-radius:50%;width:42px;height:42px;font-size:19px;cursor:pointer;margin-inline-end:8px;color:#fff}
 .bell .bn{position:absolute;top:-5px;left:-5px;background:#f43f5e;color:#fff;border-radius:999px;min-width:19px;height:19px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 0 2px #0b0f1d}
 .bell.ring{animation:bellRing .9s ease 2}
@@ -233,6 +234,22 @@ async function adminReply(sid){
   const { error } = await sb.rpc('chat_reply',{ p_student:sid, p_body:t });
   if(error){ m('am', msgBox('الرد ما اتبعتش، جرّب تاني','err')); return; }
   await adminChats(sid);
+}
+
+let _botH=[];
+function ensureBot(){
+  if(document.getElementById('botFab')) return;
+  document.body.insertAdjacentHTML('beforeend',`<button id="botFab" title="مساعد المنصة" onclick="toggleBot()">🤖</button><div id="botBox"><div style="padding:10px 14px;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-weight:800;display:flex;justify-content:space-between"><span>🤖 مساعد المنصة</span><span style="cursor:pointer" onclick="toggleBot()">✖</span></div><div id="botMsgs"><div class="small" style="padding:6px">أهلاً! اسألني عن أي مشكلة في المنصة: الشحن، شراء الكورس، المحاضرات، أو كلمة السر. ممنوع تكتب باسوردات أو بيانات خاصة هنا. ولأي سؤال علمي استخدم تبويب المدرب.</div></div><textarea id="botIn" rows="2" maxlength="500" placeholder="اكتب سؤالك..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendBot();}"></textarea><button class="btn" style="border-radius:0" onclick="sendBot()">ابعت</button></div>`);
+}
+function toggleBot(){ ensureBot(); document.getElementById('botBox').classList.toggle('open'); }
+async function sendBot(){
+  const i=document.getElementById('botIn'); const t=(i.value||'').trim(); if(!t) return; i.value='';
+  const box=document.getElementById('botMsgs'); box.insertAdjacentHTML('beforeend',bub(true,t,'أنا',Date.now())); 
+  box.insertAdjacentHTML('beforeend','<div id="botWait" class="small" style="padding:6px">جارِ الكتابة...</div>'); box.scrollTop=box.scrollHeight;
+  let ans='المساعد لسه مش متفعل. جرّب تبويب المدرب.';
+  try{ const { data, error } = await sb.functions.invoke('platform-bot',{ body:{ message:t, history:_botH.slice(-6) } }); if(!error && data && data.reply){ ans=data.reply; _botH.push({role:'user',text:t},{role:'bot',text:ans}); } else if(data&&data.error==='limit') ans='وصلت للحد اليومي من الأسئلة. جرّب بكرة أو كلم المدرب.'; }catch(e){}
+  const w=document.getElementById('botWait'); if(w) w.remove();
+  box.insertAdjacentHTML('beforeend',bub(false,ans,'مساعد المنصة',Date.now(),'/media/icon-192.png')); box.scrollTop=box.scrollHeight;
 }
 function goTab(t){ curTab=t; studentView=t; window.scrollTo(0,0); route(); }
 function goHome(){ studentView='home'; curTab='home'; window.scrollTo(0,0); route(); }
@@ -398,7 +415,7 @@ async function viewStudent(user){
   if(!['home','free','courses','lectures','wallet','profile','inbox','chat'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
   if(studentView==='courses' && active) studentView='lectures';
-  renderTabs('student', TAB_OF[studentView]);
+  renderTabs('student', TAB_OF[studentView]); ensureBot();
   const greet = `<div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">${active?'اشتراكك مفعّل ✅ ادخل على تبويب الكورسات.':'ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي من تبويب الكورسات.'}</p></div>`;
   startBell();
   if(studentView==='inbox'){ await viewInbox(st); return; }
