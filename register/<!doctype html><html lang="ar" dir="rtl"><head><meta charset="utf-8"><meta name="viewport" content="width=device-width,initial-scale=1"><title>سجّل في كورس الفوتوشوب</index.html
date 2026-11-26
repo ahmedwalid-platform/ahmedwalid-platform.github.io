@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سجّل في كورس الفوتوشوب</title>
+<style>
+body{margin:0;background:#fcfbf9;color:#3b2a2a;font-family:system-ui,"Segoe UI",Tahoma,sans-serif}
+main{max-width:520px;margin:0 auto;padding:24px 18px 40px}
+h1{font-size:28px;margin:8px 0}.fact{color:#7a6a6a;margin:0 0 12px}
+label{display:block;margin:16px 0 6px;color:#6b5c5c}
+input,textarea{width:100%;box-sizing:border-box;padding:14px;border:1px solid #ddd5d0;border-radius:10px;font-size:16px;background:#fff;font-family:inherit}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{padding:14px;border:1px solid #ddd5d0;border-radius:10px;background:#fff;font-size:16px;cursor:pointer;text-align:center;font-family:inherit}
+.opt.on{background:#2f6f6a;color:#fff;border-color:#2f6f6a}
+#send{display:block;margin-top:24px;padding:16px;border-radius:10px;background:#3b2a2a;color:#fff;text-align:center;text-decoration:none;font-size:17px}
+#send.off{opacity:.45;pointer-events:none}
+.foot{margin-top:24px;color:#7a6a6a;font-size:14px}
+</style></head><body><main>
+<h1>سجّل في كورس الفوتوشوب</h1>
+<p class="fact">كل جمعة 8:00 - 9:30 م</p>
+<p>املأ البيانات واضغط إرسال، وهيفتحلك واتساب برسالة جاهزة تبعتها لأحمد.</p>
+<label>الاسم بالكامل (مطلوب)</label><input id="name">
+<label>رقم الواتساب (مطلوب)</label><input id="wa" inputmode="tel">
+<label>المحافظة</label><input id="gov">
+<label>العنوان بالتفصيل (اكتب عنوانك كامل)</label><textarea id="addr" rows="2"></textarea>
+<label>السن (اختياري)</label><input id="age" inputmode="numeric">
+<label>مستواك في الفوتوشوب (اختياري)</label>
+<div class="opts" data-k="level"><button type="button" class="opt">مبتدئ</button><button type="button" class="opt">عندي فكرة بسيطة</button></div>
+<label>تفضّل الكورس</label>
+<div class="opts" data-k="mode"><button type="button" class="opt" data-v="أونلاين (زوم)">أونلاين (زوم)</button><button type="button" class="opt" data-v="أوفلاين في سنتر لو اتجمعت مجموعة">أوفلاين في سنتر</button></div>
+<label>ملاحظات (اختياري)</label><textarea id="note" rows="2"></textarea>
+<a id="send" class="off" href="#" target="_blank" rel="noopener">إرسال التسجيل على واتساب</a>
+<p class="foot">التسجيل بيوصل لأحمد على واتساب. مفيش دفع من الصفحة دي.</p>
+</main>
+<script>
+var PHONE='201143757857',sel={level:'',mode:''};
+function g(i){return document.getElementById(i).value.trim()}
+document.querySelectorAll('.opts').forEach(function(box){box.addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b)return;var k=box.dataset.k,v=b.dataset.v||b.textContent;
+box.querySelectorAll('.opt').forEach(function(x){x.classList.remove('on')});if(sel[k]===v){sel[k]=''}else{sel[k]=v;b.classList.add('on')}upd()})});
+function upd(){var d=function(x){return x||'-'};
+var t=['تسجيل في كورس الفوتوشوب','الاسم: '+g('name'),'رقم الواتساب: '+g('wa'),'المحافظة: '+d(g('gov')),'العنوان بالتفصيل: '+d(g('addr')),'السن: '+d(g('age')),'المستوى: '+d(sel.level),'أونلاين ولا أوفلاين: '+d(sel.mode),'ملاحظات: '+d(g('note'))].join('\n');
+var a=document.getElementById('send');a.href='https://wa.me/'+PHONE+'?text='+encodeURIComponent(t);
+var ok=g('name')&&g('wa');a.className=ok?'':'off';a.textContent=ok?'إرسال التسجيل على واتساب':'اكتب الاسم ورقم الواتساب الأول'}
+document.querySelectorAll('input,textarea').forEach(function(x){x.addEventListener('input',upd)});upd();
+</script></body></html>
