@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126x';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126y';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -166,7 +166,7 @@ async function saveProfile(uid){
   }
   const { error } = await sb.from('students').update(upd).eq('id', uid);
   if(error){ m('pm', msgBox('حصل خطأ في الحفظ، راجع البيانات وجرّب تاني','err')); return; }
-  studentView='home'; await route();
+  studentView='home'; if(document.querySelector('#tabs.scroll')) curTab='profile'; await route();
 }
 const alog_=(a,n,r,sid)=>sb.rpc('admin_log',{p_action:a,p_name:n||'-',p_reason:r||'-',p_student:sid||null});
 async function refreshBell(){ const b=document.getElementById('bell'); if(!b) return; const { count } = await sb.from('notifications').select('id',{count:'exact',head:true}).is('read_at',null); const n=document.getElementById('bellN'); const prev=+n.innerText||0; n.innerText=count>99?'99+':count; n.classList.toggle('hidden',!count); if(count>prev && prev>=0 && window._bellInit){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); } window._bellInit=true; }
@@ -218,7 +218,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126x" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126y" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -622,7 +622,18 @@ async function viewAdmin(user, role){
     document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
   }
-  app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p></div>`);
+  { const me=(typeof _students!=='undefined'&&_students||[]).find(x=>x.id===user.id); const pu=me?await avatarUrl(me.photo_path):'';
+    const form = me ? `<div id="pm" style="margin-top:12px"></div>
+    <div style="text-align:center;margin:14px 0"><img id="pimg" src="${pu}" style="${pu?'':'display:none;'}width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa" alt=""><div id="pph" style="${pu?'display:none;':''}font-size:64px">🙂</div></div>
+    <label>الصورة الشخصية (jpg / png حتى 2 ميجا)</label><input id="pphoto" type="file" accept="image/jpeg,image/png,image/webp">
+    <label>الاسم</label><input id="pname" value="${h(me.full_name||'')}">
+    <label>السن</label><input id="page" dir="ltr" inputmode="numeric" value="${h(me.age||'')}">
+    <label>رقم موبايلك</label><input id="pphone" dir="ltr" inputmode="numeric" value="${h(me.phone||'')}">
+    <label>رقم موبايل ولي الأمر (اختياري)</label><input id="pguard" dir="ltr" inputmode="numeric" value="${h(me.guardian_phone||'')}">
+    <label>المحافظة</label><select id="pgov"><option value="">اختار المحافظة</option>${GOVS.map(g=>`<option ${g===me.governorate?'selected':''}>${g}</option>`).join('')}</select>
+    <label>العنوان</label><input id="paddr" value="${h(me.address||'')}">
+    <div style="margin-top:16px"><button class="btn" onclick="saveProfile('${me.id}')">💾 حفظ</button></div>` : '';
+    app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p>${form}</div>`); }
   renderTabs('admin', curTab); watchPresence();
   const RULES=[[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
   app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
