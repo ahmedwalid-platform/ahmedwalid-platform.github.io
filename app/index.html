@@ -79,11 +79,18 @@ a{color:#f472b6;font-weight:700}
 .inst-role{color:#2dd4bf;font-weight:800;font-size:14px;margin:4px 0 8px}
 .inst-bio{font-size:14px;color:#cbd2ea;line-height:1.9}
 @media(max-width:860px){.split{grid-template-columns:1fr}}
+header{flex-wrap:wrap;gap:10px}
+#tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tab{background:rgba(139,92,246,.12);border:1px solid rgba(167,139,250,.4);color:#d6c9fd;padding:9px 18px;border-radius:999px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s}
+.tab:hover{background:rgba(139,92,246,.28)}
+.tab.on{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(236,72,153,.4)}
+@media(max-width:760px){header{padding:10px 3vw}header h1{font-size:17px}#tabs{order:3;width:100%;gap:5px;flex-wrap:nowrap}.tab{flex:1;padding:9px 2px;font-size:12.5px;text-align:center;white-space:nowrap}}
 </style>
 </head>
 <body>
 <header>
   <h1 id="brandLink" style="cursor:pointer" title="الصفحة الرئيسية" onclick="goHome()">Ahmed <span>walid</span> | منصة الكورسات</h1>
+  <nav id="tabs"></nav>
   <div>
     <span id="whoami" class="small"></span>
     <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل خروج</button>
@@ -139,7 +146,13 @@ async function saveProfile(uid){
   if(error){ m('pm', msgBox('حصل خطأ في الحفظ، راجع البيانات وجرّب تاني','err')); return; }
   studentView='home'; await route();
 }
-function goHome(){ studentView='home'; window.scrollTo(0,0); route(); }
+let curTab='home';
+const TABS_ADMIN=[['home','🏠 الرئيسية'],['courses','🎬 الكورسات'],['profile','👤 الملف الشخصي']];
+const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['profile','👤 الملف الشخصي']];
+const TAB_OF={home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
+function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.innerHTML=L.map(t=>`<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')">${t[1]}</button>`).join(''); }
+function goTab(t){ curTab=t; studentView=t; window.scrollTo(0,0); route(); }
+function goHome(){ studentView='home'; curTab='home'; window.scrollTo(0,0); route(); }
 function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
 function setMsg(m){ app.innerHTML = m; }
 function msgBox(t, kind){ return `<div class="msg ${kind}">${t}</div>`; }
@@ -299,26 +312,27 @@ async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
   const active = !!(en && en.status === 'active');
-  if(studentView==='profile'){ viewProfile(st); return; }
+  if(!['home','free','courses','lectures','wallet','profile'].includes(studentView)) studentView='home';
+  if(studentView==='lectures' && !active) studentView='courses';
+  if(studentView==='courses' && active) studentView='lectures';
+  renderTabs('student', TAB_OF[studentView]);
+  const greet = `<div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">${active?'اشتراكك مفعّل ✅ ادخل على تبويب الكورسات.':'ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي من تبويب الكورسات.'}</p></div>`;
+  if(studentView==='profile'){ await viewProfile(st); app.insertAdjacentHTML('beforeend', pwCard()); return; }
   if(studentView==='free'){ viewFree(st); return; }
-  if(!active){
-    studentView='home';
+  if(studentView==='home'){ setMsg(greet + freeCard()); return; }
+  if(studentView==='wallet'){
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
     setMsg(`
-    <div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي.</p></div>
-    ${freeCard()}
-    ${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس الأساسي (بعد الشراء)</button><p class="small" style="margin-top:8px">هيتفتحلك أول ما تشتريه من رصيد محفظتك.</p></div>`)}
-    ${pwCard()}
     <div class="card" style="max-width:640px;margin:22px auto">
-      <p style="margin:0 0 12px">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
+      <p style="margin:0 0 12px">حالة الاشتراك: ${active?'<span class="badge active">مفعّل ✅</span>':'<span class="badge pending">في انتظار التفعيل</span>'}</p>
       ${pending ? msgBox('بلّغنا أحمد ✅ هيضيف المبلغ لرصيدك بعد ما يراجع التحويل.','ok') : ''}
       <div class="card" style="background:rgba(10,14,26,.6)">
         <h3 style="margin-bottom:10px">👛 رصيد المحفظة</h3>
         <div class="paynum" id="walletBal">${fmtMoney(st&&st.balance)} جنيه</div>
         <div id="buymsg"></div>
         <p style="margin-top:10px">سعر الكورس: <b>${COURSE_PRICE} جنيه</b></p>
-        <button class="btn" style="width:100%;margin-top:10px" onclick="buyCourse()">🛒 اشتري الكورس</button>
+        ${active?'':`<button class="btn" style="width:100%;margin-top:10px" onclick="buyCourse()">🛒 اشتري الكورس</button>`}
         <h3 style="margin:18px 0 8px">إزاي أشحن رصيدي؟</h3>
         <p>حوّل المبلغ على <b>اتصالات كاش</b> على الرقم:</p>
         <div class="paynum">01143757857</div>
@@ -331,12 +345,8 @@ async function viewStudent(user){
     </div>`);
     return;
   }
-  if(studentView==='home'){
-    setMsg(`
-    <div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}</div>
-    ${freeCard()}
-    ${courseHero(`<div style="margin-top:16px"><span class="badge active">مشترك مفعّل ✅</span><div style="margin-top:14px"><button class="btn" id="enterCourseBtn" onclick="enterCourse()">▶ الدخول للكورس</button></div></div>`)}
-    ${pwCard()}`);
+  if(!active){
+    setMsg(`${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس الأساسي (بعد الشراء)</button><p class="small" style="margin-top:8px">اشحن رصيدك من تبويب "شحن الرصيد" واشتري الكورس، وهيتفتحلك على طول.</p><button class="btn" style="margin-top:10px" onclick="goTab('wallet')">💰 روح لشحن الرصيد</button></div>`)}`);
     return;
   }
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
@@ -352,7 +362,6 @@ async function viewStudent(user){
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
-    <button class="btn ghost" onclick="goHome()">← رجوع لصفحة الكورس</button>
   </div>
   <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الكورس</h2>${list}</div>`);
 }
@@ -573,6 +582,10 @@ async function viewAdmin(user, role){
     document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
   }
+  app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p></div>`);
+  renderTabs('admin', curTab);
+  const RULES=[[/سجل|المساعدين|تصحيح يدوي|تغيير كلمة سر|الملف الشخصي/,'profile'],[/معاينة|محاضر/,'courses'],[/.*/,'home']];
+  app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
 }
 async function approve(sid, rid){
   await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid);
@@ -672,7 +685,7 @@ async function route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
   document.getElementById('whoami').innerText = s ? s.user.email : '';
-  if(!s){ viewLogin(); return; }
+  if(!s){ renderTabs(''); viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
   if(sf){ return viewAdmin(s.user,'helper'); }
