@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ahmed walid | منصة الدورات التعليمية</title>
+<title>Ahmed walid | منصة الكورسات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Cairo',sans-serif}
-body{background:radial-gradient(1200px 600px at 80% -10%,rgba(99,102,241,.25),transparent),radial-gradient(900px 500px at 10% 110%,rgba(16,185,129,.12),transparent),#0a0e1a;color:#e8ebf4;min-height:100vh}
-.wrap{max-width:880px;margin:0 auto;padding:22px}
-header{display:flex;justify-content:space-between;align-items:center;padding:14px 26px;background:rgba(13,18,34,.75);backdrop-filter:blur(14px);border-bottom:1px solid rgba(120,130,255,.15);position:sticky;top:0;z-index:10}
-header h1{font-size:20px;font-weight:900;background:linear-gradient(90deg,#818cf8,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+body{background:radial-gradient(1400px 700px at 85% -10%,rgba(99,102,241,.30),transparent),radial-gradient(1000px 600px at 5% 110%,rgba(16,185,129,.16),transparent),linear-gradient(180deg,#0a0e1a,#0d1120 60%,#0a0e1a);color:#e8ebf4;min-height:100vh}
+.wrap{width:100%;max-width:1180px;margin:0 auto;padding:26px 22px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 4vw;background:rgba(13,18,34,.8);backdrop-filter:blur(14px);border-bottom:1px solid rgba(120,130,255,.18);position:sticky;top:0;z-index:10}
+header h1{font-size:22px;font-weight:900;background:linear-gradient(90deg,#818cf8,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
 header h1 span{color:#f1f3fa;-webkit-text-fill-color:#f1f3fa}
-.btn{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:11px 20px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;box-shadow:0 4px 18px rgba(99,102,241,.35);transition:transform .15s,box-shadow .15s}
-.btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(99,102,241,.5)}
+.btn{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:12px 22px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;box-shadow:0 4px 18px rgba(99,102,241,.35);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(99,102,241,.5)}
 .btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
 .btn.ghost{background:rgba(99,102,241,.08);border:1px solid rgba(129,140,248,.4);box-shadow:none;color:#c7cdfb}
 .btn.green{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3)}
@@ -44,18 +44,22 @@ th{color:#a3aac4;font-weight:700}
 a{color:#818cf8;font-weight:700}
 .small{font-size:13px;color:#a3aac4}
 .hidden{display:none}
-.hero{border-radius:20px;padding:28px;margin-top:22px;background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(16,185,129,.14));border:1px solid rgba(129,140,248,.3)}
-.hero h2{font-size:22px;font-weight:900;margin-bottom:10px}
+.hero{width:100%;border-radius:24px;padding:34px 30px;margin-top:6px;background:linear-gradient(135deg,rgba(99,102,241,.28),rgba(16,185,129,.16));border:1px solid rgba(129,140,248,.32);position:relative;overflow:hidden}
+.hero::after{content:'🎨';position:absolute;left:26px;top:14px;font-size:110px;opacity:.14}
+.hero h2{font-size:26px;font-weight:900;margin-bottom:12px}
+.hero p{color:#cdd3e8;font-size:16px;margin-bottom:8px}
 .hero ul{margin:10px 22px 0;line-height:2;font-size:15px;color:#cdd3e8}
-.stat{display:inline-block;background:rgba(10,14,26,.7);border:1px solid rgba(120,130,255,.25);border-radius:12px;padding:8px 16px;margin:4px;font-size:14px;font-weight:700;color:#c7cdfb}
+.stat{display:inline-block;background:rgba(10,14,26,.7);border:1px solid rgba(120,130,255,.3);border-radius:12px;padding:8px 16px;margin:4px;font-size:14px;font-weight:700;color:#c7cdfb}
+.split{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;align-items:start}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Ahmed <span>walid</span> | منصة الدورات</h1>
+  <h1>Ahmed <span>walid</span> | منصة الكورسات</h1>
   <div>
     <span id="whoami" class="small"></span>
-    <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل الخروج</button>
+    <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل خروج</button>
   </div>
 </header>
 <div class="wrap" id="app"></div>
@@ -76,52 +80,57 @@ function m(id, html){ document.getElementById(id).innerHTML = html; }
 
 function courseHero(){
   return `<div class="hero">
-    <h2>🎨 دورة أساسيات برنامج فوتوشوب</h2>
+    <h2>دورة أساسيات الفوتوشوب من الصفر 🎨</h2>
     <div>
-      <span class="stat">📅 أربع جلسات مباشرة عبر Zoom</span>
-      <span class="stat">🕗 كل جمعة من 8:00 إلى 9:30 مساءً</span>
-      <span class="stat">💳 الرسوم: 1300 جنيه مصري</span>
-      <span class="stat">🎓 مشروع ختامي وشهادة إتمام</span>
+      <span class="stat">📅 4 جلسات لايف على Zoom</span>
+      <span class="stat">🕗 كل جمعة من 8:00 لـ 9:30 مساءً</span>
+      <span class="stat">💳 السعر: 1300 جنيه للكورس كله</span>
+      <span class="stat">🎓 مشروع + شهادة إتمام</span>
     </div>
     <ul>
-      <li>أساسيات البرنامج والتعامل مع الأدوات</li>
-      <li>الطبقات (Layers) والتحديد والقص</li>
-      <li>تعديل الصور وتحسينها وتصميم منشورات التواصل الاجتماعي</li>
-      <li>تصميم المطبوعات والهوية البصرية وتنفيذ مشروع كامل بنفسك</li>
+      <li>أساسيات البرنامج والتعامل مع الأدوات والطبقات (Layers)</li>
+      <li>التحديد والقص وتعديل الصور وتحسينها</li>
+      <li>تصميم بوستات سوشيال ميديا وإعلانات ومطبوعات</li>
+      <li>إزاي تعمل هوية بصرية ومشروع كامل بنفسك</li>
     </ul>
   </div>`;
 }
 
 function viewLogin(){
   setMsg(`
-  ${courseHero()}
-  <div class="card" style="max-width:460px;margin:26px auto">
-    <h2 style="margin-bottom:18px">تسجيل الدخول</h2>
-    <div id="m"></div>
-    <label>البريد الإلكتروني</label>
-    <input id="email" type="email" dir="ltr" placeholder="example@gmail.com">
-    <label>كلمة المرور</label>
-    <input id="pass" type="password" dir="ltr">
-    <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
-    <p class="small center" style="margin-top:16px">ليس لديك حساب بعد؟ <a href="#" onclick="viewSignup();return false">إنشاء حساب جديد</a></p>
+  <div class="split">
+    ${courseHero()}
+    <div class="card" style="margin-top:6px">
+      <h2 style="margin-bottom:18px">تسجيل الدخول</h2>
+      <div id="m"></div>
+      <label>البريد الإلكتروني</label>
+      <input id="email" type="email" dir="ltr" placeholder="example@gmail.com">
+      <label>كلمة السر</label>
+      <input id="pass" type="password" dir="ltr">
+      <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
+      <p class="small center" style="margin-top:16px">لسه معملتش حساب؟ <a href="#" onclick="viewSignup();return false">إنشاء حساب جديد</a></p>
+    </div>
   </div>`);
 }
 function viewSignup(){
   setMsg(`
-  <div class="card" style="max-width:460px;margin:30px auto">
-    <h2 style="margin-bottom:18px">إنشاء حساب جديد</h2>
-    <div id="m"></div>
-    <label>الاسم الكامل</label><input id="name">
-    <label>رقم الهاتف</label><input id="phone" dir="ltr" placeholder="01xxxxxxxxx">
-    <label>البريد الإلكتروني</label><input id="email" type="email" dir="ltr">
-    <label>كلمة المرور</label><input id="pass" type="password" dir="ltr">
-    <button class="btn" style="width:100%" onclick="doSignup()">إنشاء الحساب</button>
-    <p class="small center" style="margin-top:16px">لديك حساب بالفعل؟ <a href="#" onclick="viewLogin();return false">تسجيل الدخول</a></p>
+  <div class="split">
+    ${courseHero()}
+    <div class="card" style="margin-top:6px">
+      <h2 style="margin-bottom:18px">إنشاء حساب جديد</h2>
+      <div id="m"></div>
+      <label>الاسم بالكامل</label><input id="name">
+      <label>رقم الموبايل</label><input id="phone" dir="ltr" placeholder="01xxxxxxxxx">
+      <label>البريد الإلكتروني</label><input id="email" type="email" dir="ltr">
+      <label>كلمة السر</label><input id="pass" type="password" dir="ltr">
+      <button class="btn" style="width:100%" onclick="doSignup()">إنشاء الحساب</button>
+      <p class="small center" style="margin-top:16px">عندك حساب؟ <a href="#" onclick="viewLogin();return false">تسجيل الدخول</a></p>
+    </div>
   </div>`);
 }
 async function doSignup(){
   const name=v('name'), phone=v('phone'), email=v('email'), pass=v('pass');
-  if(!name||!email||!pass){ m('m', msgBox('يرجى إدخال الاسم والبريد الإلكتروني وكلمة المرور.','err')); return; }
+  if(!name||!email||!pass){ m('m', msgBox('املأ الاسم والإيميل وكلمة السر','err')); return; }
   const { data, error } = await sb.auth.signUp({ email, password: pass });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await sb.from('students').insert({ id: data.user.id, full_name: name, phone, email });
@@ -129,7 +138,7 @@ async function doSignup(){
 }
 async function doLogin(){
   const { error } = await sb.auth.signInWithPassword({ email: v('email'), password: v('pass') });
-  if(error){ m('m', msgBox('البريد الإلكتروني أو كلمة المرور غير صحيحة.','err')); return; }
+  if(error){ m('m', msgBox('الإيميل أو كلمة السر غلط','err')); return; }
   route();
 }
 async function logout(){ await sb.auth.signOut(); location.reload(); }
@@ -142,19 +151,19 @@ async function viewStudent(user){
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
     setMsg(`
     ${courseHero()}
-    <div class="card" style="max-width:540px;margin:26px auto">
-      <h2>مرحباً بك، ${h(st ? st.full_name : '')} 👋</h2>
-      <p style="margin:12px 0">حالة الاشتراك: <span class="badge pending">قيد المراجعة</span></p>
-      ${pending ? msgBox('تم استلام طلبك بنجاح، وسيتم تفعيل حسابك فور مراجعة عملية الدفع.','ok') : ''}
+    <div class="card" style="max-width:640px;margin:22px auto">
+      <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
+      <p style="margin:12px 0">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
+      ${pending ? msgBox('طلبك وصل ✅ هيتم تفعيل حسابك بعد مراجعة الدفع.','ok') : ''}
       <div class="card" style="background:rgba(10,14,26,.6)">
         <h3 style="margin-bottom:10px">💳 طريقة الدفع والاشتراك</h3>
-        <p>رسوم الدورة: <b>1300 جنيه مصري</b></p>
-        <p style="margin-top:10px">يرجى تحويل المبلغ عبر محفظة <b>اتصالات كاش</b> إلى الرقم التالي:</p>
+        <p>سعر الكورس: <b>1300 جنيه</b></p>
+        <p style="margin-top:10px">حوّل المبلغ على <b>اتصالات كاش</b> على الرقم:</p>
         <div class="paynum">01143757857</div>
-        <p class="small">بعد إتمام التحويل، أرسل اسمك ورقم هاتفك عبر واتساب، ثم اضغط على زر طلب التفعيل أدناه.</p>
+        <p class="small">بعد التحويل، ابعت اسمك ورقمك على واتساب واضغط زرار طلب التفعيل تحت.</p>
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
           <button class="btn" onclick="requestUnlock()" ${pending?'disabled':''}>📩 طلب تفعيل الاشتراك</button>
-          <a class="btn wa" target="_blank" href="https://wa.me/201143757857?text=${encodeURIComponent('أنا '+(st?st.full_name:'')+'، قمت بتحويل رسوم الدورة عبر اتصالات كاش. رقم هاتفي: '+(st&&st.phone?st.phone:''))}">تواصل عبر واتساب</a>
+          <a class="btn wa" target="_blank" href="https://wa.me/201143757857?text=${encodeURIComponent('أنا '+(st?st.full_name:'')+'، حولت اشتراك الكورس على اتصالات كاش. رقمي: '+(st&&st.phone?st.phone:''))}">واتساب</a>
         </div>
       </div>
     </div>`);
@@ -165,16 +174,16 @@ async function viewStudent(user){
     <div class="lecture">
       <h3>${i+1}. ${h(l.title)}</h3>
       <p class="small">${h(l.description||'')}</p>
-      <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة المحاضرة</button>
+      <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>
     </div>`).join('');
-  if(!lectures || !lectures.length) list = msgBox('سيتم نشر المحاضرات هنا قريباً.','info');
+  if(!lectures || !lectures.length) list = msgBox('المحاضرات هتنزل هنا قريب.','info');
   setMsg(`
   <div class="card">
-    <h2>مرحباً بك، ${h(st ? st.full_name : '')} 👋</h2>
-    <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مُفعَّل ✅</span></p>
+    <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
+    <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
   </div>
-  <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الدورة</h2>${list}</div>`);
+  <div class="card"><h2 style="margin-bottom:16px">📚 المحاضرات</h2>${list}</div>`);
 }
 function playLecture(id){
   const box = document.getElementById('vid-'+id);
@@ -193,12 +202,12 @@ async function requestUnlock(){
   if(!s.session) return;
   const { data: st } = await sb.from('students').select('full_name').eq('id', s.session.user.id).single();
   const { error } = await sb.from('unlock_requests').insert({ student_id: s.session.user.id, sender_name: st ? st.full_name : '' });
-  if(error){ alert('حدث خطأ، يرجى المحاولة مرة أخرى.'); return; }
+  if(error){ alert('حصل خطأ، جرب تاني'); return; }
   route();
 }
 
 async function viewAdmin(user){
-  setMsg(`<div class="card"><h2>لوحة تحكم المدير 🛠️</h2><p class="small">جارٍ تحميل البيانات...</p></div>`);
+  setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
   const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
@@ -206,36 +215,36 @@ async function viewAdmin(user){
   const reqRows = (reqs||[]).map(r=>`<tr>
     <td>${h(r.sender_name || nameOf(r.student_id))}</td>
     <td class="small">${new Date(r.created_at).toLocaleString('ar-EG')}</td>
-    <td><button class="btn green" onclick="approve('${r.student_id}', ${r.id})">الموافقة ✅</button>
+    <td><button class="btn green" onclick="approve('${r.student_id}', ${r.id})">موافقة ✅</button>
     <button class="btn red" onclick="rejectReq(${r.id})">رفض</button></td></tr>`).join('');
   const stRows = (students||[]).map(s=>{ const st=(s.enrollments&&s.enrollments.status)||'pending'; return `<tr>
     <td>${h(s.full_name)}</td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
-    <td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مُفعَّل':'قيد الانتظار'}</span></td>
+    <td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
     <td>${s.email===ADMIN_EMAIL?'':(st==='active'
       ? `<button class="btn red" onclick="setActive('${s.id}', false)">إيقاف</button>`
       : `<button class="btn green" onclick="setActive('${s.id}', true)">تفعيل</button>`)}</td></tr>`; }).join('');
   const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   setMsg(`
   <div class="card">
-    <h2 style="margin-bottom:14px">📩 طلبات التفعيل المعلّقة (${(reqs||[]).length})</h2>
-    ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">لا توجد طلبات معلّقة حالياً.</p>'}
+    <h2 style="margin-bottom:14px">📩 طلبات التفعيل (${(reqs||[]).length})</h2>
+    ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">مفيش طلبات منتظرة.</p>'}
   </div>
   <div class="card">
-    <h2 style="margin-bottom:14px">👥 قائمة الطلاب (${(students||[]).length})</h2>
-    <table><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>رقم الهاتف</th><th>الحالة</th><th></th></tr>${stRows}</table>
+    <h2 style="margin-bottom:14px">👥 الطلاب (${(students||[]).length})</h2>
+    <table><tr><th>الاسم</th><th>الإيميل</th><th>الموبايل</th><th>الحالة</th><th></th></tr>${stRows}</table>
   </div>
   <div class="card">
-    <h2 style="margin-bottom:14px">➕ إضافة محاضرة جديدة</h2>
+    <h2 style="margin-bottom:14px">➕ إضافة محاضرة</h2>
     <div id="m"></div>
-    <label>عنوان المحاضرة</label><input id="ltitle">
+    <label>العنوان</label><input id="ltitle">
     <label>الوصف</label><input id="ldesc">
-    <label>رابط الفيديو (رابط يوتيوب أو رابط mp4 مباشر)</label><input id="lurl" dir="ltr">
+    <label>رابط الفيديو (يوتيوب أو رابط mp4 مباشر)</label><input id="lurl" dir="ltr">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
-    <button class="btn" onclick="addLecture()">إضافة المحاضرة</button>
+    <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
   <div class="card">
     <h2 style="margin-bottom:14px">📚 المحاضرات الحالية</h2>
-    ${lecRows ? `<table><tr><th>#</th><th>العنوان</th><th></th></tr>${lecRows}</table>` : '<p class="small">لم تتم إضافة محاضرات بعد.</p>'}
+    ${lecRows ? `<table><tr><th>#</th><th>العنوان</th><th></th></tr>${lecRows}</table>` : '<p class="small">مفيش محاضرات لسه.</p>'}
   </div>`);
 }
 async function approve(sid, rid){
@@ -250,12 +259,12 @@ async function setActive(sid, on){
 }
 async function addLecture(){
   const t=v('ltitle'), u=v('lurl');
-  if(!t||!u){ m('m', msgBox('يرجى إدخال عنوان المحاضرة ورابط الفيديو.','err')); return; }
+  if(!t||!u){ m('m', msgBox('اكتب العنوان ورابط الفيديو','err')); return; }
   const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: u, sort_order: parseInt(v('lorder'))||0 });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   route();
 }
-async function delLecture(id){ if(!confirm('هل أنت متأكد من حذف هذه المحاضرة؟')) return; await sb.from('lectures').delete().eq('id', id); route(); }
+async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; await sb.from('lectures').delete().eq('id', id); route(); }
 
 async function route(){
   const s = await getSession();
