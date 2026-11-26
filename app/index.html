@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126u';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126v';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -169,7 +169,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126u" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126v" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -356,22 +356,34 @@ async function viewStudent(user){
   </div>
   <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الكورس</h2>${list}</div>`);
 }
+async function sourceHtml(u){
+  if(!u) return '';
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  if(yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`;
+  if(/^https?:\/\//.test(u)) return `<video controls preload="metadata" src="${h(u)}"></video>`;
+  const { data: s2, error } = await sb.storage.from('lectures').createSignedUrl(u, 3600);
+  if(error || !s2) return '';
+  return `<video controls preload="metadata" src="${h(s2.signedUrl)}"></video>`;
+}
+const _lecSrc = {};
 async function playLecture(id){
   const box = document.getElementById('vid-'+id);
-  const { data } = await sb.from('lectures').select('video_url').eq('id', id).single();
+  const { data } = await sb.from('lectures').select('video_url, video_url2').eq('id', id).single();
   if(!data) return;
-  const u = data.video_url;
-  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  if(yt){
-    box.innerHTML = `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`;
-  } else if(/^https?:\/\//.test(u)){
-    box.innerHTML = `<video controls preload="metadata" src="${h(u)}"></video>`;
-  } else {
-    const { data: s, error } = await sb.storage.from('lectures').createSignedUrl(u, 3600);
-    if(error || !s){ box.innerHTML = msgBox('حصلت مشكلة في تحميل الفيديو، جرّب تاني.','err'); box.classList.remove('hidden'); return; }
-    box.innerHTML = `<video controls preload="metadata" src="${h(s.signedUrl)}"></video>`;
-  }
+  _lecSrc[id] = [data.video_url, data.video_url2];
   box.classList.remove('hidden');
+  await switchServer(id, 1);
+}
+async function switchServer(id, n){
+  const box = document.getElementById('vid-'+id);
+  const src = _lecSrc[id] || [];
+  const has2 = !!src[1];
+  const html = await sourceHtml(src[n-1]);
+  const btns = has2 ? `<div style="display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap">
+      <button class="btn ${n===1?'':'ghost'}" onclick="switchServer(${id},1)">سيرفر 1</button>
+      <button class="btn ${n===2?'':'ghost'}" onclick="switchServer(${id},2)">سيرفر 2</button>
+      <span class="small" style="align-self:center">لو الفيديو بطيء أو مش بيشتغل جرّب السيرفر التاني.</span></div>` : '';
+  box.innerHTML = btns + (html || msgBox('حصلت مشكلة في تحميل الفيديو، جرّب السيرفر التاني أو حاول بعد شوية.','err'));
 }
 const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
@@ -540,8 +552,11 @@ async function viewAdmin(user, role){
     <div id="m"></div>
     <label>العنوان</label><input id="ltitle">
     <label>الوصف</label><input id="ldesc">
-    <label>ارفع ملف الفيديو (mp4، لحد 50 ميجا)</label><input id="lfile" type="file" accept="video/mp4,video/*">
+    <h3 style="margin:14px 0 6px">سيرفر 1 (الأساسي)</h3><label>ارفع ملف الفيديو (mp4، لحد 50 ميجا)</label><input id="lfile" type="file" accept="video/mp4,video/*">
     <label>أو رابط يوتيوب (غير مدرج / Unlisted) بدل الرفع</label><input id="lurl" dir="ltr" placeholder="https://youtu.be/...">
+    <h3 style="margin:14px 0 6px">سيرفر 2 (اختياري، نسخة تانية من نفس الفيديو)</h3>
+    <label>ارفع ملف الفيديو للسيرفر 2 (mp4، لحد 50 ميجا)</label><input id="lfile2" type="file" accept="video/mp4,video/*">
+    <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج أو رابط mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -625,25 +640,30 @@ async function manualGrant(){
   if(error){ m('mmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
   await route(); m('mmsg', msgBox('الكورس اتفتح للطالب ✅ (من غير خصم)','ok'));
 }
-async function addLecture(){
-  const t=v('ltitle'), u=v('lurl');
-  const f=document.getElementById('lfile').files[0];
-  if(!t || (!u && !f)){ m('m', msgBox('اكتب العنوان وارفع ملف الفيديو (أو حط رابط يوتيوب)','err')); return; }
-  let videoUrl = u;
+async function uploadOrLink(fileId, urlId, tag){
+  const u=v(urlId); const f=document.getElementById(fileId).files[0];
   if(f){
-    if(f.size > 50*1024*1024){ m('m', msgBox('الملف أكبر من 50 ميجا. صغّره أو ارفعه على يوتيوب (غير مدرج) وحط الرابط.','err')); return; }
-    m('m', msgBox('جاري رفع الفيديو... متقفلش الصفحة','info'));
+    if(f.size > 50*1024*1024) return { err:'الملف أكبر من 50 ميجا. صغّره أو ارفعه على يوتيوب (غير مدرج) وحط الرابط.' };
     const ext = (f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'') || 'mp4';
-    const path = 'lec-' + Date.now() + '.' + ext;
+    const path = 'lec-' + tag + '-' + Date.now() + '.' + ext;
     const up = await sb.storage.from('lectures').upload(path, f, { contentType: f.type || 'video/mp4', upsert: false });
-    if(up.error){ m('m', msgBox('فشل الرفع: '+h(up.error.message),'err')); return; }
-    videoUrl = path;
+    if(up.error) return { err:'فشل الرفع: '+h(up.error.message) };
+    return { val: path };
   }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: videoUrl, sort_order: parseInt(v('lorder'))||0 });
+  return { val: u || null };
+}
+async function addLecture(){
+  const t=v('ltitle');
+  if(!t){ m('m', msgBox('اكتب عنوان المحاضرة','err')); return; }
+  if(!v('lurl') && !document.getElementById('lfile').files[0]){ m('m', msgBox('السيرفر 1 مطلوب: ارفع ملف أو حط رابط','err')); return; }
+  m('m', msgBox('جاري الرفع... متقفلش الصفحة','info'));
+  const s1 = await uploadOrLink('lfile','lurl','s1'); if(s1.err){ m('m', msgBox(s1.err,'err')); return; }
+  const s2 = await uploadOrLink('lfile2','lurl2','s2'); if(s2.err){ m('m', msgBox(s2.err,'err')); return; }
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0 });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   route();
 }
-async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); if(l && l.video_url && !/^https?:\/\//.test(l.video_url)) await sb.storage.from('lectures').remove([l.video_url]); route(); }
+async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url, video_url2').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); const paths=[l&&l.video_url, l&&l.video_url2].filter(x=>x && !/^https?:\/\//.test(x)); if(paths.length) await sb.storage.from('lectures').remove(paths); route(); }
 
 async function route(){
   const s = await getSession();
