@@ -80,7 +80,7 @@ a{color:#f472b6;font-weight:700}
 </head>
 <body>
 <header>
-  <h1>Ahmed <span>walid</span> | منصة الكورسات</h1>
+  <h1 id="brandLink" style="cursor:pointer" title="الصفحة الرئيسية" onclick="goHome()">Ahmed <span>walid</span> | منصة الكورسات</h1>
   <div>
     <span id="whoami" class="small"></span>
     <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل خروج</button>
@@ -95,6 +95,9 @@ const ADMIN_EMAIL = 'walidamen087@gmail.com';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const app = document.getElementById('app');
 const h = s => { const d=document.createElement('div'); d.innerText=s==null?'':String(s); return d.innerHTML; };
+let studentView='home';
+function goHome(){ studentView='home'; window.scrollTo(0,0); route(); }
+function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
 function setMsg(m){ app.innerHTML = m; }
 function msgBox(t, kind){ return `<div class="msg ${kind}">${t}</div>`; }
 async function getSession(){ const { data } = await sb.auth.getSession(); return data.session; }
@@ -205,6 +208,12 @@ async function viewStudent(user){
     </div>`);
     return;
   }
+  if(studentView==='home'){
+    setMsg(`
+    ${courseHero(`<div style="margin-top:16px"><span class="badge active">مشترك مفعّل ✅</span><div style="margin-top:14px"><button class="btn" id="enterCourseBtn" onclick="enterCourse()">▶ الدخول للكورس</button></div></div>`)}
+    <div class="card" style="max-width:640px;margin:22px auto"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2><p class="small" style="margin-top:8px">اضغط «الدخول للكورس» عشان تشوف المحاضرات.</p></div>`);
+    return;
+  }
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
   let list = (lectures||[]).map((l,i)=>`
     <div class="lecture">
@@ -218,6 +227,7 @@ async function viewStudent(user){
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
+    <button class="btn ghost" onclick="goHome()">← رجوع لصفحة الكورس</button>
   </div>
   <div class="card"><h2 style="margin-bottom:16px">📚 المحاضرات</h2>${list}</div>`);
 }
