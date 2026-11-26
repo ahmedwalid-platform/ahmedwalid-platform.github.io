@@ -84,7 +84,8 @@ header{flex-wrap:wrap;gap:10px}
 .tab{background:rgba(139,92,246,.12);border:1px solid rgba(167,139,250,.4);color:#d6c9fd;padding:9px 18px;border-radius:999px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s}
 .tab:hover{background:rgba(139,92,246,.28)}
 .tab.on{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(236,72,153,.4)}
-@media(max-width:760px){header{padding:10px 3vw}header h1{font-size:17px}#tabs{order:3;width:100%;gap:4px;flex-wrap:nowrap}.tab{flex:1 1 0;min-width:0;padding:6px 2px;font-size:11.5px;line-height:1.25;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;white-space:normal}.tab .ti{font-size:17px}}
+#tabs.scroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}#tabs.scroll .tab{flex:0 0 auto;white-space:nowrap}
+@media(max-width:760px){#tabs.scroll .tab{flex:0 0 auto;min-width:76px;padding:6px 8px}header{padding:10px 3vw}header h1{font-size:17px}#tabs{order:3;width:100%;gap:4px;flex-wrap:nowrap}.tab{flex:1 1 0;min-width:0;padding:6px 2px;font-size:11.5px;line-height:1.25;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;white-space:normal}.tab .ti{font-size:17px}}
 header h1{display:flex;align-items:center;gap:10px}
 .logo-top{height:38px;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(212,175,55,.35))}
 #loader{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 45%,#1a1530 0,#05060d 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;transition:opacity .35s}
@@ -182,10 +183,10 @@ function presBadge(ts,sid){ const on=isOnline(ts); return `<span class="badge pr
 function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence'); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
 function watchPresence(){ if(window._presW) clearInterval(window._presW); window._presW=setInterval(async()=>{ const els=document.querySelectorAll('.pres[data-sid]'); if(!els.length){ clearInterval(window._presW); return; } const { data } = await sb.from('students').select('id,last_seen'); (data||[]).forEach(r=>{ const e=document.querySelector('.pres[data-sid="'+r.id+'"]'); if(e) e.outerHTML=presBadge(r.last_seen,r.id); }); },30000); }
 let curTab='home';
-const TABS_ADMIN=[['home','🏠 الرئيسية'],['courses','🎬 الكورسات'],['log','📜 السجل'],['profile','👤 الملف الشخصي']];
+const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
 const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['profile','👤 الملف الشخصي']];
 const TAB_OF={home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
-function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
+function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.className=L.length>5?'scroll':''; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
 function goTab(t){ curTab=t; studentView=t; window.scrollTo(0,0); route(); }
 function goHome(){ studentView='home'; curTab='home'; window.scrollTo(0,0); route(); }
 function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
@@ -474,13 +475,10 @@ async function topUpByCode(){
   if(!st){ m('tmsg', msgBox('اكتب كود طالب صحيح','err')); return; }
   if(!(val>0)){ m('tmsg', msgBox('اكتب مبلغ صحيح أكبر من صفر','err')); return; }
   if(!confirm('تضيف '+val+' جنيه لرصيد '+st.full_name+' (كود '+c+')؟')) return;
-  const { data: nb, error } = await sb.rpc('admin_topup', { target: st.id, amount: val, note: 'اتصالات كاش' });
+  const { error } = await sb.rpc('admin_topup', { target: st.id, amount: val, note: 'اتصالات كاش' });
   if(error){ m('tmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
   await route();
-  const ph=normPhone(st.phone); const okPh=/^01[0-9]{9}$/.test(ph);
-  const txt='أهلاً '+st.full_name+'، تم إضافة '+fmtMoney(val)+' جنيه لرصيدك على منصة Ahmed walid. رصيدك دلوقتي '+fmtMoney(nb)+' جنيه، وتقدر تشتري الكورس من تبويب "شحن الرصيد".';
-  const wa = okPh ? `<br><a class="btn wa" style="margin-top:10px" target="_blank" rel="noopener" href="https://wa.me/2${ph}?text=${encodeURIComponent(txt)}">📲 ابعت واتساب للطالب</a>` : '<br><span class="small">رقم الطالب مش مسجل صح، مش هينفع واتساب.</span>';
-  m('tmsg', msgBox('تم شحن '+fmtMoney(val)+' جنيه لـ '+h(st.full_name)+' ✅ والطالب هيلاقي إشعار جوه المنصة.'+wa,'ok'));
+  m('tmsg', msgBox('تم شحن '+fmtMoney(val)+' جنيه لـ '+h(st.full_name)+' ✅ والطالب هيلاقي إشعار جوه المنصة.','ok'));
 }
 async function requestUnlock(){
   const { data: s } = await sb.auth.getSession();
@@ -626,7 +624,7 @@ async function viewAdmin(user, role){
   }
   app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p></div>`);
   renderTabs('admin', curTab); watchPresence();
-  const RULES=[[/سجل/,'log'],[/المساعدين|تصحيح يدوي|تغيير كلمة سر|الملف الشخصي/,'profile'],[/معاينة|محاضر/,'courses'],[/.*/,'home']];
+  const RULES=[[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
   app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
 }
 async function approve(sid, rid){
