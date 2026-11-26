@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126j';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126k';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +126,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126j" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126k" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -310,9 +310,10 @@ async function viewAdmin(user){
   const stRows = (students||[]).map(s=>{ const st=(s.enrollments&&s.enrollments.status)||'pending'; return `<tr>
     <td>${h(s.full_name)}</td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
     <td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
-    <td>${s.email===ADMIN_EMAIL?'':(st==='active'
-      ? `<button class="btn red" onclick="setActive('${s.id}', false)">إيقاف</button>`
-      : `<button class="btn green" onclick="setActive('${s.id}', true)">تفعيل</button>`)}</td></tr>`; }).join('');
+    <td style="white-space:nowrap">${s.email===ADMIN_EMAIL?'<span class="small">الأدمن</span>':`
+      <button class="btn green" ${st==='active'?'disabled':''} onclick="setActive('${s.id}', true)">تفعيل</button>
+      <button class="btn ghost" ${st==='active'?'':'disabled'} onclick="setActive('${s.id}', false)">إلغاء التفعيل</button>
+      <button class="btn red" onclick="deleteStudent('${s.id}','${h(s.full_name).replace(/'/g,'')}')">حذف الحساب</button>`}</td></tr>`; }).join('');
   const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   const courseList = (lectures||[]).map((l,i)=>`
     <div class="lecture">
@@ -338,6 +339,12 @@ async function viewAdmin(user){
     <table><tr><th>الاسم</th><th>الإيميل</th><th>الموبايل</th><th>الحالة</th><th></th></tr>${stRows}</table>
   </div>
   <div class="card">
+    <h2 style="margin-bottom:14px">🔑 تغيير كلمة سر الأدمن</h2>
+    <div id="pwmsg"></div>
+    <label>كلمة السر الجديدة</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password">
+    <button class="btn" onclick="changeAdminPassword()">حفظ كلمة السر</button>
+  </div>
+  <div class="card">
     <h2 style="margin-bottom:14px">➕ إضافة محاضرة</h2>
     <div id="m"></div>
     <label>العنوان</label><input id="ltitle">
@@ -358,6 +365,20 @@ async function approve(sid, rid){
   route();
 }
 async function rejectReq(rid){ await sb.from('unlock_requests').update({ status: 'rejected' }).eq('id', rid); route(); }
+async function deleteStudent(sid, name){
+  if(!confirm('متأكد إنك عايز تمسح حساب «'+name+'» نهائي؟ هيتمسح الحساب وكل طلباته، وهيقدر يسجل من جديد بنفس الإيميل. مفيش رجوع.')) return;
+  const { error } = await sb.rpc('admin_delete_student', { target: sid });
+  if(error){ alert('حصل خطأ: '+error.message); return; }
+  route();
+}
+async function changeAdminPassword(){
+  const p1=document.getElementById('newpass').value;
+  if(p1.length<8){ m('pwmsg', msgBox('كلمة السر لازم تكون 8 حروف على الأقل','err')); return; }
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if(error){ m('pwmsg', msgBox(h(error.message),'err')); return; }
+  document.getElementById('newpass').value='';
+  m('pwmsg', msgBox('تم تغيير كلمة السر ✅','ok'));
+}
 async function setActive(sid, on){
   await sb.from('enrollments').upsert({ student_id: sid, status: on ? 'active' : 'pending', approved_at: on ? new Date().toISOString() : null });
   route();
