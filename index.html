@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126y';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126z';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -99,6 +99,7 @@ header h1{display:flex;align-items:center;gap:10px}
 @keyframes lgShine{0%{background-position:150% 0}100%{background-position:-100% 0}}
 @keyframes lgBar{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 @media(max-width:760px){.logo-top{height:30px}}
+#botFab{position:fixed;bottom:18px;left:18px;z-index:60;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;font-size:28px;color:#fff;background:linear-gradient(135deg,#ec4899,#8b5cf6);box-shadow:0 6px 24px rgba(139,92,246,.6)}#botBox{position:fixed;bottom:88px;left:18px;z-index:60;width:min(360px,calc(100vw - 36px));max-height:70vh;display:none;flex-direction:column;background:#12102a;border:1px solid rgba(167,139,250,.5);border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.6);overflow:hidden}#botBox.open{display:flex}#botMsgs{padding:10px;overflow-y:auto;flex:1;min-height:180px}#botBox textarea{margin:0;border-radius:0;resize:none}
 .bell{position:relative;background:rgba(139,92,246,.12);border:1px solid rgba(167,139,250,.4);border-radius:50%;width:42px;height:42px;font-size:19px;cursor:pointer;margin-inline-end:8px;color:#fff}
 .bell .bn{position:absolute;top:-5px;left:-5px;background:#f43f5e;color:#fff;border-radius:999px;min-width:19px;height:19px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 0 2px #0b0f1d}
 .bell.ring{animation:bellRing .9s ease 2}
@@ -183,10 +184,73 @@ function presBadge(ts,sid){ const on=isOnline(ts); return `<span class="badge pr
 function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence'); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
 function watchPresence(){ if(window._presW) clearInterval(window._presW); window._presW=setInterval(async()=>{ const els=document.querySelectorAll('.pres[data-sid]'); if(!els.length){ clearInterval(window._presW); return; } const { data } = await sb.from('students').select('id,last_seen'); (data||[]).forEach(r=>{ const e=document.querySelector('.pres[data-sid="'+r.id+'"]'); if(e) e.outerHTML=presBadge(r.last_seen,r.id); }); },30000); }
 let curTab='home';
-const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
-const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['profile','👤 الملف الشخصي']];
-const TAB_OF={home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
+const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['chats','💬 رسائل الطلاب'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
+const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['chat','💬 المدرب'],['profile','👤 الملف الشخصي']];
+const TAB_OF={chat:'chat',home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
 function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.className=L.length>5?'scroll':''; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
+
+const avEl=(url,name,sid,sz)=>{ sz=sz||38; const base=`width:${sz}px;height:${sz}px;border-radius:50%;flex:0 0 ${sz}px;object-fit:cover;border:2px solid #a78bfa;${sid?'cursor:pointer;':''}`; const clk=sid?` onclick="event.stopPropagation();adminProfile('${sid}')" title="فتح ملف الطالب"`:''; return url?`<img src="${url}" style="${base}"${clk} alt="">`:`<div style="${base}display:flex;align-items:center;justify-content:center;background:#4c1d95;color:#fff;font-weight:800"${clk}>${h((name||'?').trim().charAt(0))}</div>`; };
+const bub=(mine,txt,who,ts,photo,sid)=>`<div style="display:flex;justify-content:${mine?'flex-start':'flex-end'};align-items:flex-end;gap:8px;margin:8px 0">${avEl(photo,who,sid)}<div style="max-width:78%;padding:10px 14px;border-radius:16px;${mine?'background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff':'background:rgba(148,163,184,.18);color:#e5e7eb'}"><div class="small" style="opacity:.9;margin-bottom:3px"><b>${h(who)}</b></div><div style="white-space:pre-wrap;word-break:break-word">${h(txt)}</div><div class="small" style="opacity:.7;margin-top:4px">${new Date(ts).toLocaleString('ar-EG')}</div></div></div>`;
+async function viewChat(st){
+  const { data } = await sb.from('chat_messages').select('*').eq('student_id',st.id).order('created_at').limit(300);
+  const myUrl=await avatarUrl(st.photo_path); const { data: si } = await sb.rpc('chat_staff_info'); const stf=(si&&si[0])||{}; const stUrl=(await avatarUrl(stf.photo_path))||'/media/instructor-avatar.jpg';
+  const list=(data||[]).map(x=>x.sender==='student'?bub(true,x.body,st.full_name,x.created_at,myUrl):bub(false,x.body,x.sender_name,x.created_at,stUrl)).join('')||'<p class="small" style="margin:12px 0">ابعت سؤالك أو مشكلتك هنا والمدرب هيرد عليك. هتلاقي الرد هنا وهيجيلك إشعار 🔔.</p>';
+  setMsg(`<div class="card" style="max-width:640px;margin:0 auto"><h2>💬 شات مع المدرب</h2><p class="small">اسأل في أي حاجة علمية أو مشكلة في المنصة. الرد مش فوري، بس هيوصلك إشعار.</p><div id="chatBox" style="max-height:52vh;overflow-y:auto;margin:12px 0;padding:4px">${list}</div><div id="cm"></div><textarea id="chatIn" rows="3" maxlength="2000" placeholder="اكتب رسالتك هنا..."></textarea><button class="btn" style="margin-top:10px" onclick="sendChat()">📤 ابعت</button></div>`);
+  const bx=document.getElementById('chatBox'); bx.scrollTop=bx.scrollHeight;
+  if((data||[]).some(x=>x.sender==='staff'&&!x.read_at)) await sb.rpc('chat_mark_read');
+  if(window._chatT) clearInterval(window._chatT);
+  window._chatT=setInterval(async()=>{ const b=document.getElementById('chatBox'); if(!b){ clearInterval(window._chatT); return; } if(document.hidden||document.activeElement===document.getElementById('chatIn')&&document.getElementById('chatIn').value) return; const { data:d2 } = await sb.from('chat_messages').select('id').eq('student_id',st.id); if((d2||[]).length!==(data||[]).length){ viewChat(st); } },10000);
+}
+async function sendChat(){
+  const t=(document.getElementById('chatIn').value||'').trim(); if(!t){ m('cm', msgBox('اكتب رسالتك الأول','err')); return; }
+  const { error } = await sb.rpc('chat_send',{ p_body:t });
+  if(error){ m('cm', msgBox(/too many/.test(error.message)?'بعتّ رسائل كتير في وقت قصير، استنى شوية وجرّب تاني.':'الرسالة ما اتبعتتش، جرّب تاني.','err')); return; }
+  studentView='chat'; await route();
+}
+async function adminChats(openSid){
+  const box=document.getElementById('chatsBody'); if(!box) return;
+  const { data, error } = await sb.from('chat_messages').select('*').order('created_at').limit(2000);
+  if(error){ box.innerHTML=msgBox('مقدرتش أحمّل الرسائل','err'); return; }
+  const meId=((await sb.auth.getSession()).data.session||{user:{}}).user.id; const meRow=_students.find(x=>x.id===meId)||{}; const meUrl=(await avatarUrl(meRow.photo_path))||'/media/instructor-avatar.jpg'; const pc={}; const stU=async id=>{ if(!(id in pc)){ const r=_students.find(x=>x.id===id)||{}; pc[id]=await avatarUrl(r.photo_path); } return pc[id]; };
+  const by={}; (data||[]).forEach(x=>{ (by[x.student_id]=by[x.student_id]||[]).push(x); });
+  const unreadTotal=(data||[]).filter(x=>x.sender==='student'&&!x.read_at).length;
+  const tl=document.querySelector('#tabs button[onclick*="chats"] .tl'); if(tl) tl.textContent='رسائل الطلاب'+(unreadTotal?' ('+unreadTotal+')':'');
+  window._chatOpen = openSid===undefined ? window._chatOpen : openSid;
+  const sid=window._chatOpen;
+  if(sid && by[sid]){
+    const arr=by[sid]; const nm=(arr.find(x=>x.sender==='student')||{}).sender_name||((_students.find(x=>x.id===sid)||{}).full_name)||'طالب';
+    const su=await stU(sid);
+    box.innerHTML=`<button class="btn ghost" onclick="adminChats(null)">← كل المحادثات</button><div style="display:flex;align-items:center;gap:10px;margin:12px 0">${avEl(su,nm,sid,52)}<div><h3>${h(nm)}</h3><span class="small">دوس على الصورة تفتح ملف الطالب</span></div></div><div id="aChatBox" style="max-height:50vh;overflow-y:auto">${arr.map(x=>x.sender==='staff'?bub(true,x.body,x.sender_name,x.created_at,meUrl):bub(false,x.body,nm,x.created_at,su,sid)).join('')}</div><div id="am"></div><textarea id="aIn" rows="3" maxlength="2000" placeholder="اكتب ردك..."></textarea><button class="btn" style="margin-top:10px" onclick="adminReply('${sid}')">📤 رد</button>`;
+    const ab=document.getElementById('aChatBox'); ab.scrollTop=ab.scrollHeight;
+    if(arr.some(x=>x.sender==='student'&&!x.read_at)){ await sb.rpc('chat_mark_read',{ p_student:sid }); if(tl){ const left=unreadTotal-arr.filter(x=>x.sender==='student'&&!x.read_at).length; tl.textContent='رسائل الطلاب'+(left?' ('+left+')':''); } }
+    return;
+  }
+  const rows=Object.entries(by).map(([id,arr])=>{ const last=arr[arr.length-1]; const un=arr.filter(x=>x.sender==='student'&&!x.read_at).length; const nm=(arr.find(x=>x.sender==='student')||{}).sender_name||'طالب'; return {id,nm,last,un}; }).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
+  for(const r of rows) r.u=await stU(r.id);
+  box.innerHTML = rows.length ? rows.map(r=>`<div class="notif ${r.un?'new':''}" style="cursor:pointer;display:flex;gap:12px;align-items:center" onclick="adminChats('${r.id}')">${avEl(r.u,r.nm,r.id,46)}<div style="flex:1;min-width:0"><b>${h(r.nm)}</b>${r.un?` <span class="badge active">${r.un} جديد</span>`:''}<p style="margin-top:6px">${h(r.last.body.slice(0,90))}</p><p class="small" style="margin-top:4px">${new Date(r.last.created_at).toLocaleString('ar-EG')}</p></div></div>`).join('') : '<p class="small">مفيش رسائل من الطلاب لسه.</p>';
+}
+async function adminReply(sid){
+  const t=(document.getElementById('aIn').value||'').trim(); if(!t){ m('am', msgBox('اكتب الرد الأول','err')); return; }
+  const { error } = await sb.rpc('chat_reply',{ p_student:sid, p_body:t });
+  if(error){ m('am', msgBox('الرد ما اتبعتش، جرّب تاني','err')); return; }
+  await adminChats(sid);
+}
+
+let _botH=[];
+function ensureBot(){
+  if(document.getElementById('botFab')) return;
+  document.body.insertAdjacentHTML('beforeend',`<button id="botFab" title="مساعد المنصة" onclick="toggleBot()">🤖</button><div id="botBox"><div style="padding:10px 14px;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-weight:800;display:flex;justify-content:space-between"><span>🤖 مساعد المنصة</span><span style="cursor:pointer" onclick="toggleBot()">✖</span></div><div id="botMsgs"><div class="small" style="padding:6px">أهلاً! اسألني عن أي مشكلة في المنصة: الشحن، شراء الكورس، المحاضرات، أو كلمة السر. ممنوع تكتب باسوردات أو بيانات خاصة هنا. ولأي سؤال علمي استخدم تبويب المدرب.</div></div><textarea id="botIn" rows="2" maxlength="500" placeholder="اكتب سؤالك..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendBot();}"></textarea><button class="btn" style="border-radius:0" onclick="sendBot()">ابعت</button></div>`);
+}
+function toggleBot(){ ensureBot(); document.getElementById('botBox').classList.toggle('open'); }
+async function sendBot(){
+  const i=document.getElementById('botIn'); const t=(i.value||'').trim(); if(!t) return; i.value='';
+  const box=document.getElementById('botMsgs'); box.insertAdjacentHTML('beforeend',bub(true,t,'أنا',Date.now())); 
+  box.insertAdjacentHTML('beforeend','<div id="botWait" class="small" style="padding:6px">جارِ الكتابة...</div>'); box.scrollTop=box.scrollHeight;
+  let ans='المساعد لسه مش متفعل. جرّب تبويب المدرب.';
+  try{ const { data, error } = await sb.functions.invoke('platform-bot',{ body:{ message:t, history:_botH.slice(-6) } }); if(!error && data && data.reply){ ans=data.reply; _botH.push({role:'user',text:t},{role:'bot',text:ans}); } else if(data&&data.error==='limit') ans='وصلت للحد اليومي من الأسئلة. جرّب بكرة أو كلم المدرب.'; }catch(e){}
+  const w=document.getElementById('botWait'); if(w) w.remove();
+  box.insertAdjacentHTML('beforeend',bub(false,ans,'مساعد المنصة',Date.now(),'/media/icon-192.png')); box.scrollTop=box.scrollHeight;
+}
 function goTab(t){ curTab=t; studentView=t; window.scrollTo(0,0); route(); }
 function goHome(){ studentView='home'; curTab='home'; window.scrollTo(0,0); route(); }
 function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
@@ -218,7 +282,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126y" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126z" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -348,13 +412,14 @@ async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
   const active = !!(en && en.status === 'active');
-  if(!['home','free','courses','lectures','wallet','profile','inbox'].includes(studentView)) studentView='home';
+  if(!['home','free','courses','lectures','wallet','profile','inbox','chat'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
   if(studentView==='courses' && active) studentView='lectures';
-  renderTabs('student', TAB_OF[studentView]);
+  renderTabs('student', TAB_OF[studentView]); ensureBot();
   const greet = `<div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">${active?'اشتراكك مفعّل ✅ ادخل على تبويب الكورسات.':'ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي من تبويب الكورسات.'}</p></div>`;
   startBell();
   if(studentView==='inbox'){ await viewInbox(st); return; }
+  if(studentView==='chat'){ await viewChat(st); return; }
   if(studentView==='profile'){ await viewProfile(st); app.insertAdjacentHTML('beforeend', pwCard()); return; }
   if(studentView==='free'){ viewFree(st); return; }
   if(studentView==='home'){ setMsg(greet + freeCard()); return; }
@@ -622,7 +687,7 @@ async function viewAdmin(user, role){
     document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
   }
-  { const me=(typeof _students!=='undefined'&&_students||[]).find(x=>x.id===user.id); const pu=me?await avatarUrl(me.photo_path):'';
+  { const me=(typeof _students!=='undefined'&&_students||[]).find(x=>x.id===user.id); const pu=me?((await avatarUrl(me.photo_path))||(isMain?'/media/instructor-avatar.jpg':'')):'';
     const form = me ? `<div id="pm" style="margin-top:12px"></div>
     <div style="text-align:center;margin:14px 0"><img id="pimg" src="${pu}" style="${pu?'':'display:none;'}width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa" alt=""><div id="pph" style="${pu?'display:none;':''}font-size:64px">🙂</div></div>
     <label>الصورة الشخصية (jpg / png حتى 2 ميجا)</label><input id="pphoto" type="file" accept="image/jpeg,image/png,image/webp">
@@ -634,8 +699,9 @@ async function viewAdmin(user, role){
     <label>العنوان</label><input id="paddr" value="${h(me.address||'')}">
     <div style="margin-top:16px"><button class="btn" onclick="saveProfile('${me.id}')">💾 حفظ</button></div>` : '';
     app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p>${form}</div>`); }
-  renderTabs('admin', curTab); watchPresence();
-  const RULES=[[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
+  app.insertAdjacentHTML('afterbegin','<div class="card" data-tab="chats"><h2>💬 رسائل الطلاب</h2><div id="chatsBody" style="margin-top:12px"><p class="small">جارِ التحميل...</p></div></div>');
+  renderTabs('admin', curTab); watchPresence(); adminChats(); if(window._aChT) clearInterval(window._aChT); window._aChT=setInterval(()=>{ const b=document.getElementById('chatsBody'); if(!b){ clearInterval(window._aChT); return; } if(!document.hidden && curTab==='chats' && !(document.getElementById('aIn')&&document.getElementById('aIn').value)) adminChats(); },10000);
+  const RULES=[[/رسائل الطلاب/,'chats'],[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
   app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
 }
 async function approve(sid, rid){
