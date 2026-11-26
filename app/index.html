@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126e';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126f';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,6 +119,8 @@ function courseHero(cta){
       <li>تصميم بوستات سوشيال ميديا وإعلانات ومطبوعات</li>
       <li>إزاي تعمل هوية بصرية ومشروع كامل بنفسك</li>
     </ul>
+    <div class="freevid"><h3 style="margin:18px 0 10px">🎬 فيديو تعريفي مجاني عن الكورس</h3>
+      <video id="freeIntro" controls preload="metadata" playsinline src="https://ynlyugdjbncerwemyihg.supabase.co/storage/v1/object/public/public-intro/intro.mp4" style="width:100%;max-height:520px;border-radius:16px;background:#000"></video></div>
     ${cta||''}
   </div>`;
 }
@@ -126,7 +128,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126e" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126f" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -222,7 +224,7 @@ async function viewStudent(user){
       <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة الفيديو</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>
     </div>`).join('');
-  if(!lectures || !lectures.length) list = msgBox('المحاضرات هتنزل هنا قريب.','info');
+  if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
   setMsg(`
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
@@ -281,7 +283,7 @@ async function viewAdmin(user){
       <p class="small">${h(l.description||'')}</p>
       <button class="btn" style="margin-top:12px" onclick="playLecture(${l.id})">▶ شغّل الفيديو</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>
-    </div>`).join('') || '<p class="small">مفيش محاضرات لسه.</p>';
+    </div>`).join('') || '<p class="small">المحاضرات هتتضاف قريبا</p>';
   setMsg(`
   <div class="card" id="courseCard">
     <h2 style="margin-bottom:14px">🎬 دخول الكورس (معاينة الأدمن)</h2>
@@ -300,7 +302,8 @@ async function viewAdmin(user){
     <div id="m"></div>
     <label>العنوان</label><input id="ltitle">
     <label>الوصف</label><input id="ldesc">
-    <label>اسم ملف الفيديو في التخزين (مثل intro.mp4) أو رابط يوتيوب</label><input id="lurl" dir="ltr">
+    <label>ارفع ملف الفيديو (mp4، لحد 50 ميجا)</label><input id="lfile" type="file" accept="video/mp4,video/*">
+    <label>أو رابط يوتيوب (غير مدرج / Unlisted) بدل الرفع</label><input id="lurl" dir="ltr" placeholder="https://youtu.be/...">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -321,12 +324,23 @@ async function setActive(sid, on){
 }
 async function addLecture(){
   const t=v('ltitle'), u=v('lurl');
-  if(!t||!u){ m('m', msgBox('اكتب العنوان ورابط الفيديو','err')); return; }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: u, sort_order: parseInt(v('lorder'))||0 });
+  const f=document.getElementById('lfile').files[0];
+  if(!t || (!u && !f)){ m('m', msgBox('اكتب العنوان وارفع ملف الفيديو (أو حط رابط يوتيوب)','err')); return; }
+  let videoUrl = u;
+  if(f){
+    if(f.size > 50*1024*1024){ m('m', msgBox('الملف أكبر من 50 ميجا. صغّره أو ارفعه على يوتيوب (غير مدرج) وحط الرابط.','err')); return; }
+    m('m', msgBox('جاري رفع الفيديو... متقفلش الصفحة','info'));
+    const ext = (f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'') || 'mp4';
+    const path = 'lec-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from('lectures').upload(path, f, { contentType: f.type || 'video/mp4', upsert: false });
+    if(up.error){ m('m', msgBox('فشل الرفع: '+h(up.error.message),'err')); return; }
+    videoUrl = path;
+  }
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: videoUrl, sort_order: parseInt(v('lorder'))||0 });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   route();
 }
-async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; await sb.from('lectures').delete().eq('id', id); route(); }
+async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); if(l && l.video_url && !/^https?:\/\//.test(l.video_url)) await sb.storage.from('lectures').remove([l.video_url]); route(); }
 
 async function route(){
   const s = await getSession();
