@@ -474,10 +474,13 @@ async function topUpByCode(){
   if(!st){ m('tmsg', msgBox('اكتب كود طالب صحيح','err')); return; }
   if(!(val>0)){ m('tmsg', msgBox('اكتب مبلغ صحيح أكبر من صفر','err')); return; }
   if(!confirm('تضيف '+val+' جنيه لرصيد '+st.full_name+' (كود '+c+')؟')) return;
-  const { error } = await sb.rpc('admin_topup', { target: st.id, amount: val, note: 'اتصالات كاش' });
+  const { data: nb, error } = await sb.rpc('admin_topup', { target: st.id, amount: val, note: 'اتصالات كاش' });
   if(error){ m('tmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
   await route();
-  m('tmsg', msgBox('تم شحن '+fmtMoney(val)+' جنيه لـ '+h(st.full_name)+' ✅','ok'));
+  const ph=normPhone(st.phone); const okPh=/^01[0-9]{9}$/.test(ph);
+  const txt='أهلاً '+st.full_name+'، تم إضافة '+fmtMoney(val)+' جنيه لرصيدك على منصة Ahmed walid. رصيدك دلوقتي '+fmtMoney(nb)+' جنيه، وتقدر تشتري الكورس من تبويب "شحن الرصيد".';
+  const wa = okPh ? `<br><a class="btn wa" style="margin-top:10px" target="_blank" rel="noopener" href="https://wa.me/2${ph}?text=${encodeURIComponent(txt)}">📲 ابعت واتساب للطالب</a>` : '<br><span class="small">رقم الطالب مش مسجل صح، مش هينفع واتساب.</span>';
+  m('tmsg', msgBox('تم شحن '+fmtMoney(val)+' جنيه لـ '+h(st.full_name)+' ✅ والطالب هيلاقي إشعار جوه المنصة.'+wa,'ok'));
 }
 async function requestUnlock(){
   const { data: s } = await sb.auth.getSession();
