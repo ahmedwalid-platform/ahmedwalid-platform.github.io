@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahmed walid - منصة الكورسات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Cairo',sans-serif}
+body{background:#0b0f19;color:#e6e9f0;min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:#121829;border-bottom:1px solid #232c44}
+header h1{font-size:20px;font-weight:900;color:#7c8cff}
+header h1 span{color:#fff}
+.btn{background:#4f5ef7;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif}
+.btn:hover{background:#3d4ce0}
+.btn.ghost{background:transparent;border:1px solid #33406b}
+.btn.green{background:#16a34a}
+.btn.red{background:#dc2626;padding:6px 12px;font-size:13px}
+.btn.wa{background:#25d366}
+.card{background:#121829;border:1px solid #232c44;border-radius:16px;padding:24px;margin-top:20px}
+input,textarea{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #33406b;background:#0b0f19;color:#fff;font-size:15px;margin-bottom:12px;font-family:'Cairo',sans-serif}
+input:focus,textarea:focus{outline:none;border-color:#4f5ef7}
+label{display:block;margin-bottom:6px;font-size:14px;color:#9aa3bd}
+.msg{padding:12px 16px;border-radius:10px;margin:12px 0;font-size:14px}
+.msg.err{background:#3f1d1d;border:1px solid #7f2f2f;color:#ffb4b4}
+.msg.ok{background:#14351f;border:1px solid #2f7f4a;color:#9fe6b8}
+.msg.info{background:#1b2a4a;border:1px solid #34519e;color:#b9caff}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700}
+.badge.pending{background:#4a3a14;color:#f5c542}
+.badge.active{background:#14351f;color:#4ade80}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px;border-bottom:1px solid #232c44;text-align:right}
+th{color:#9aa3bd;font-weight:600}
+.video-box{margin-top:16px}
+.video-box video,.video-box iframe{width:100%;aspect-ratio:16/9;border-radius:12px;border:1px solid #232c44;background:#000}
+.lecture{border:1px solid #232c44;border-radius:12px;padding:16px;margin-bottom:14px;background:#0e1424}
+.lecture h3{color:#7c8cff;margin-bottom:6px}
+.paynum{font-size:26px;font-weight:900;color:#4ade80;letter-spacing:2px;direction:ltr;text-align:center;background:#0b0f19;padding:10px;border-radius:10px;margin:10px 0}
+.center{text-align:center}
+a{color:#7c8cff}
+.small{font-size:13px;color:#9aa3bd}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ahmed <span>walid</span> | منصة الكورسات</h1>
+  <div>
+    <span id="whoami" class="small"></span>
+    <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل خروج</button>
+  </div>
+</header>
+<div class="wrap" id="app"></div>
+
+<script>
+const SUPABASE_URL = 'https://ynlyugdjbncerwemyihg.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlubHl1Z2RqYm5jZXJ3ZW15aWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MDQyODUsImV4cCI6MjExMTI4MDI4NX0._1lOk-j8DnP_SyQlQGqEYC1LLZbgh9RAvmwwRHLyifQ';
+const ADMIN_EMAIL = 'walidamen087@gmail.com';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const app = document.getElementById('app');
+const h = s => { const d=document.createElement('div'); d.innerText=s==null?'':String(s); return d.innerHTML; };
+
+function setMsg(m){ app.innerHTML = m; }
+function msgBox(t, kind){ return `<div class="msg ${kind}">${t}</div>`; }
+
+async function getSession(){ const { data } = await sb.auth.getSession(); return data.session; }
+function isAdmin(user){ return user && user.email === ADMIN_EMAIL; }
+
+function viewLogin(){
+  setMsg(`
+  <div class="card" style="max-width:440px;margin:40px auto">
+    <h2 style="margin-bottom:16px">تسجيل الدخول</h2>
+    <div id="m"></div>
+    <label>البريد الإلكتروني</label>
+    <input id="email" type="email" dir="ltr" placeholder="example@gmail.com">
+    <label>كلمة السر</label>
+    <input id="pass" type="password" dir="ltr">
+    <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
+    <p class="small center" style="margin-top:14px">لسه معملتش حساب؟ <a href="#" onclick="viewSignup();return false">إنشاء حساب جديد</a></p>
+  </div>`);
+}
+function viewSignup(){
+  setMsg(`
+  <div class="card" style="max-width:440px;margin:40px auto">
+    <h2 style="margin-bottom:16px">إنشاء حساب</h2>
+    <div id="m"></div>
+    <label>الاسم بالكامل</label><input id="name">
+    <label>رقم الموبايل</label><input id="phone" dir="ltr" placeholder="01xxxxxxxxx">
+    <label>البريد الإلكتروني</label><input id="email" type="email" dir="ltr">
+    <label>كلمة السر</label><input id="pass" type="password" dir="ltr">
+    <button class="btn" style="width:100%" onclick="doSignup()">إنشاء الحساب</button>
+    <p class="small center" style="margin-top:14px">عندك حساب؟ <a href="#" onclick="viewLogin();return false">تسجيل الدخول</a></p>
+  </div>`);
+}
+async function doSignup(){
+  const name=v('name'), phone=v('phone'), email=v('email'), pass=v('pass');
+  if(!name||!email||!pass){ m('m', msgBox('املأ الاسم والإيميل وكلمة السر','err')); return; }
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if(error){ m('m', msgBox(h(error.message),'err')); return; }
+  const uid = data.user.id;
+  await sb.from('students').insert({ id: uid, full_name: name, phone, email });
+  await sb.from('enrollments').insert({ student_id: uid, status: 'pending' });
+  route();
+}
+async function doLogin(){
+  const { error } = await sb.auth.signInWithPassword({ email: v('email'), password: v('pass') });
+  if(error){ m('m', msgBox('الإيميل أو كلمة السر غلط','err')); return; }
+  route();
+}
+async function logout(){ await sb.auth.signOut(); location.reload(); }
+function v(id){ return document.getElementById(id).value.trim(); }
+function m(id, html){ document.getElementById(id).innerHTML = html; }
+
+async function viewStudent(user){
+  const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
+  const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
+  if(!en || en.status !== 'active'){
+    const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
+    const pending = reqs && reqs.length && reqs[0].status === 'pending';
+    setMsg(`
+    <div class="card" style="max-width:520px;margin:30px auto">
+      <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
+      <p style="margin:10px 0">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
+      ${pending ? msgBox('طلبك وصل ✅ هيتم تفعيل حسابك بعد مراجعة الدفع.','ok') : ''}
+      <div class="card" style="background:#0e1424">
+        <h3 style="margin-bottom:8px">💳 طريقة الدفع والاشتراك</h3>
+        <p>سعر الكورس: <b>1300 جنيه</b></p>
+        <p style="margin-top:8px">حوّل المبلغ على <b>اتصالات كاش</b> على الرقم:</p>
+        <div class="paynum">01143757857</div>
+        <p class="small">بعد التحويل، ابعت اسمك ورقمك على واتساب واضغط زرار طلب التفعيل تحت.</p>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn" onclick="requestUnlock()" ${pending?'disabled':''}>📩 طلب تفعيل الاشتراك</button>
+          <a class="btn wa" target="_blank" href="https://wa.me/201143757857?text=${encodeURIComponent('أنا '+(st?st.full_name:'')+'، حولت اشتراك الكورس على اتصالات كاش. رقمي: '+(st&&st.phone?st.phone:''))}">واتساب</a>
+        </div>
+      </div>
+    </div>`);
+    return;
+  }
+  const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
+  let list = (lectures||[]).map((l,i)=>`
+    <div class="lecture">
+      <h3>${i+1}. ${h(l.title)}</h3>
+      <p class="small">${h(l.description||'')}</p>
+      <button class="btn ghost" style="margin-top:10px" onclick="playLecture(${l.id})">▶ مشاهدة</button>
+      <div class="video-box hidden" id="vid-${l.id}"></div>
+    </div>`).join('');
+  if(!lectures || !lectures.length) list = msgBox('المحاضرات هتنزل هنا قريب.','info');
+  setMsg(`
+  <div class="card">
+    <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
+    <p style="margin:8px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
+  </div>
+  <div class="card"><h2 style="margin-bottom:14px">📚 المحاضرات</h2>${list}</div>`);
+}
+function playLecture(id){
+  const box = document.getElementById('vid-'+id);
+  sb.from('lectures').select('video_url').eq('id', id).single().then(({data})=>{
+    if(!data) return;
+    const u = data.video_url;
+    const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+    box.innerHTML = yt
+      ? `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`
+      : `<video controls preload="metadata" src="${h(u)}"></video>`;
+    box.classList.remove('hidden');
+  });
+}
+async function requestUnlock(){
+  const { data: s } = await sb.auth.getSession();
+  if(!s.session) return;
+  const { data: st } = await sb.from('students').select('full_name').eq('id', s.session.user.id).single();
+  const { error } = await sb.from('unlock_requests').insert({ student_id: s.session.user.id, sender_name: st ? st.full_name : '' });
+  if(error){ alert('حصل خطأ، جرب تاني'); return; }
+  route();
+}
+
+async function viewAdmin(user){
+  setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
+  const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
+  const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
+  const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
+  const nameOf = id => { const s=(students||[]).find(x=>x.id===id); return s ? s.full_name : id.slice(0,8); };
+  const reqRows = (reqs||[]).map(r=>`<tr>
+    <td>${h(r.sender_name || nameOf(r.student_id))}</td>
+    <td class="small">${new Date(r.created_at).toLocaleString('ar-EG')}</td>
+    <td><button class="btn green" onclick="approve('${r.student_id}', ${r.id})">موافقة ✅</button>
+    <button class="btn red" onclick="rejectReq(${r.id})">رفض</button></td></tr>`).join('');
+  const stRows = (students||[]).map(s=>{ const st=(s.enrollments&&s.enrollments.status)||'pending'; return `<tr>
+    <td>${h(s.full_name)}</td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
+    <td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
+    <td>${s.email===ADMIN_EMAIL?'':(st==='active'
+      ? `<button class="btn red" onclick="setActive('${s.id}', false)">إيقاف</button>`
+      : `<button class="btn green" onclick="setActive('${s.id}', true)">تفعيل</button>`)}</td></tr>`; }).join('');
+  const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
+  setMsg(`
+  <div class="card">
+    <h2 style="margin-bottom:12px">📩 طلبات التفعيل (${(reqs||[]).length})</h2>
+    ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">مفيش طلبات منتظرة.</p>'}
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">👥 الطلاب (${(students||[]).length})</h2>
+    <table><tr><th>الاسم</th><th>الإيميل</th><th>الموبايل</th><th>الحالة</th><th></th></tr>${stRows}</table>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">➕ إضافة محاضرة</h2>
+    <div id="m"></div>
+    <label>العنوان</label><input id="ltitle">
+    <label>الوصف</label><input id="ldesc">
+    <label>رابط الفيديو (يوتيوب أو رابط mp4 مباشر)</label><input id="lurl" dir="ltr">
+    <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
+    <button class="btn" onclick="addLecture()">إضافة</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">📚 المحاضرات الحالية</h2>
+    ${lecRows ? `<table><tr><th>#</th><th>العنوان</th><th></th></tr>${lecRows}</table>` : '<p class="small">مفيش محاضرات لسه.</p>'}
+  </div>`);
+}
+async function approve(sid, rid){
+  await sb.from('enrollments').upsert({ student_id: sid, status: 'active', approved_at: new Date().toISOString() });
+  await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid);
+  route();
+}
+async function rejectReq(rid){ await sb.from('unlock_requests').update({ status: 'rejected' }).eq('id', rid); route(); }
+async function setActive(sid, on){
+  await sb.from('enrollments').upsert({ student_id: sid, status: on ? 'active' : 'pending', approved_at: on ? new Date().toISOString() : null });
+  route();
+}
+async function addLecture(){
+  const t=v('ltitle'), u=v('lurl');
+  if(!t||!u){ m('m', msgBox('اكتب العنوان ورابط الفيديو','err')); return; }
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: u, sort_order: parseInt(v('lorder'))||0 });
+  if(error){ m('m', msgBox(h(error.message),'err')); return; }
+  route();
+}
+async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; await sb.from('lectures').delete().eq('id', id); route(); }
+
+async function route(){
+  const s = await getSession();
+  document.getElementById('logoutBtn').classList.toggle('hidden', !s);
+  document.getElementById('whoami').innerText = s ? s.user.email : '';
+  if(!s){ viewLogin(); return; }
+  if(isAdmin(s.user)){ viewAdmin(s.user); } else { viewStudent(s.user); }
+}
+route();
+</script>
+</body>
+</html>
