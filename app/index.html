@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126t';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126u';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -169,7 +169,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126t" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126u" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -416,7 +416,7 @@ async function topUpByCode(){
   if(!confirm('تضيف '+val+' جنيه لرصيد '+st.full_name+' (كود '+c+')؟')) return;
   const { error } = await sb.rpc('admin_topup', { target: st.id, amount: val, note: 'اتصالات كاش' });
   if(error){ m('tmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
-  await viewAdmin({email:ADMIN_EMAIL});
+  await route();
   m('tmsg', msgBox('تم شحن '+fmtMoney(val)+' جنيه لـ '+h(st.full_name)+' ✅','ok'));
 }
 async function requestUnlock(){
@@ -428,11 +428,13 @@ async function requestUnlock(){
   route();
 }
 
-async function viewAdmin(user){
+async function viewAdmin(user, role){
+  const isMain = !role || role==='main';
   setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
   const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
+  const { data: staffRows } = await sb.from('staff').select('*');
   const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(30);
   const { data: wtx } = await sb.from('wallet_transactions').select('*').order('created_at',{ascending:false}).limit(30);
   const { data: resets } = await sb.from('password_reset_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
@@ -509,6 +511,15 @@ async function viewAdmin(user){
     <h2 style="margin-bottom:14px">💰 سجل شحن الرصيد والمشتريات</h2>
     ${wtxRows ? `<table><tr><th>الطالب</th><th>المبلغ</th><th>النوع</th><th>الرصيد بعد</th><th>الوقت</th></tr>${wtxRows}</table>` : '<p class="small">لسه مفيش عمليات. اشحن رصيد طالب من جدول الطلاب تحت.</p>'}
   </div>
+  <div class="card" id="staffCard">
+    <h2 style="margin-bottom:6px">🧑‍💼 المساعدين</h2>
+    <p class="small" style="margin-bottom:12px">المساعد يقدر: يشوف الطلاب وملفاتهم، يشحن رصيد، يفتح/يقفل الكورس مع السبب، ويراجع بلاغات التحويل. مايقدرش: يضيف أدمن، يمسح حسابات، يرجّع أو يخصم رصيد، يعيّن كلمة سر، يغيّر المحاضرات، أو يغيّر باسورد الأدمن.</p>
+    <div id="smsg"></div>
+    ${(staffRows||[]).length ? `<table><tr><th>المساعد</th><th>الكود</th><th></th></tr>${(staffRows||[]).map(r=>{const x=(students||[]).find(z=>z.id===r.user_id)||{};return `<tr><td>${h(x.full_name||'')}</td><td dir="ltr">${h(x.student_code||'')}</td><td><button class="btn red" onclick="staffAct('remove','${h(x.student_code||'')}')">إزالة</button></td></tr>`}).join('')}</table>` : '<p class="small">مفيش مساعدين لسه.</p>'}
+    <label style="margin-top:12px">كود الطالب اللي هتعيّنه مساعد</label><input id="scode" dir="ltr" inputmode="numeric" maxlength="6" oninput="staffLookup()" placeholder="123456">
+    <div id="sname" style="margin:6px 0 10px"></div>
+    <button class="btn" onclick="staffAct('add')">➕ تعيين مساعد</button>
+  </div>
   <div class="card" id="resetCard">
     <h2 style="margin-bottom:14px">🔓 طلبات نسيان كلمة السر (${(resets||[]).length})</h2>
     <div id="tempbox"></div>
@@ -538,6 +549,12 @@ async function viewAdmin(user){
     <h2 style="margin-bottom:14px">📚 المحاضرات الحالية</h2>
     ${lecRows ? `<table><tr><th>#</th><th>العنوان</th><th></th></tr>${lecRows}</table>` : '<p class="small">مفيش محاضرات لسه.</p>'}
   </div>`);
+  if(!isMain){
+    ['courseCard','manualCard','resetCard','staffCard'].forEach(i=>{ const e=document.getElementById(i); if(e) e.remove(); });
+    const cards=[...document.querySelectorAll('.card')].filter(c=>/تغيير كلمة سر الأدمن|إضافة محاضرة|المحاضرات الحالية/.test(c.innerText)); cards.forEach(c=>c.remove());
+    document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
+    const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
+  }
 }
 async function approve(sid, rid){
   await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid);
@@ -579,6 +596,16 @@ async function setActive(sid, on){
   route();
 }
 function _byCode(id){ const c=normPhone(document.getElementById(id).value); return _students.find(x=>x.student_code===c); }
+function staffLookup(){ const st=_byCode('scode'); const c=document.getElementById('scode').value; document.getElementById('sname').innerHTML = !c?'':st?`<span class="badge active">✅ ${h(st.full_name)}</span>`:'<span class="badge pending">مفيش طالب بالكود ده</span>'; }
+async function staffAct(kind, code){
+  code = code || normPhone(document.getElementById('scode').value);
+  const st=_students.find(x=>x.student_code===code);
+  if(!st){ m('smsg', msgBox('اكتب كود طالب صحيح','err')); return; }
+  if(!confirm((kind==='add'?'تعيّن ':'تشيل صلاحية ')+st.full_name+(kind==='add'?' مساعد أدمن؟':' من المساعدين؟'))) return;
+  const { error } = await sb.rpc(kind==='add'?'admin_add_staff':'admin_remove_staff', { target_code: code });
+  if(error){ m('smsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
+  await route(); m('smsg', msgBox('تم ✅','ok'));
+}
 async function manualAdjust(){
   const st=_byCode('mcode'); const amt=parseFloat(String(document.getElementById('mamount').value).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))); const reason=document.getElementById('mreason').value.trim();
   if(!st){ m('mmsg', msgBox('اكتب كود طالب صحيح','err')); return; }
@@ -587,7 +614,7 @@ async function manualAdjust(){
   if(!confirm((amt>0?'ترجّع/تضيف ':'تخصم ')+Math.abs(amt)+' جنيه '+(amt>0?'لرصيد ':'من رصيد ')+st.full_name+'؟')) return;
   const { error } = await sb.rpc('admin_adjust_balance', { target: st.id, amount: amt, reason });
   if(error){ m('mmsg', msgBox(error.message.includes('check')||error.message.includes('balance')?'الخصم أكبر من رصيد الطالب':'حصل خطأ: '+h(error.message),'err')); return; }
-  await viewAdmin({email:ADMIN_EMAIL}); m('mmsg', msgBox('تم ✅','ok'));
+  await route(); m('mmsg', msgBox('تم ✅','ok'));
 }
 async function manualGrant(){
   const st=_byCode('mcode'); const reason=document.getElementById('mreason').value.trim();
@@ -596,7 +623,7 @@ async function manualGrant(){
   if(!confirm('تفتح الكورس لـ '+st.full_name+' مباشر من غير خصم؟')) return;
   const { error } = await sb.rpc('admin_set_access', { target: st.id, active: true, reason });
   if(error){ m('mmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
-  await viewAdmin({email:ADMIN_EMAIL}); m('mmsg', msgBox('الكورس اتفتح للطالب ✅ (من غير خصم)','ok'));
+  await route(); m('mmsg', msgBox('الكورس اتفتح للطالب ✅ (من غير خصم)','ok'));
 }
 async function addLecture(){
   const t=v('ltitle'), u=v('lurl');
@@ -623,7 +650,10 @@ async function route(){
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
   document.getElementById('whoami').innerText = s ? s.user.email : '';
   if(!s){ viewLogin(); return; }
-  if(isAdmin(s.user)){ viewAdmin(s.user); } else { viewStudent(s.user); }
+  if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
+  const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
+  if(sf){ return viewAdmin(s.user,'helper'); }
+  return viewStudent(s.user);
 }
 route();
 </script>
