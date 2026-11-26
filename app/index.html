@@ -185,17 +185,22 @@ async function viewStudent(user){
   </div>
   <div class="card"><h2 style="margin-bottom:16px">📚 المحاضرات</h2>${list}</div>`);
 }
-function playLecture(id){
+async function playLecture(id){
   const box = document.getElementById('vid-'+id);
-  sb.from('lectures').select('video_url').eq('id', id).single().then(({data})=>{
-    if(!data) return;
-    const u = data.video_url;
-    const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-    box.innerHTML = yt
-      ? `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`
-      : `<video controls preload="metadata" src="${h(u)}"></video>`;
-    box.classList.remove('hidden');
-  });
+  const { data } = await sb.from('lectures').select('video_url').eq('id', id).single();
+  if(!data) return;
+  const u = data.video_url;
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  if(yt){
+    box.innerHTML = `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`;
+  } else if(/^https?:\/\//.test(u)){
+    box.innerHTML = `<video controls preload="metadata" src="${h(u)}"></video>`;
+  } else {
+    const { data: s, error } = await sb.storage.from('lectures').createSignedUrl(u, 3600);
+    if(error || !s){ box.innerHTML = msgBox('حصلت مشكلة في تحميل الفيديو، جرّب تاني.','err'); box.classList.remove('hidden'); return; }
+    box.innerHTML = `<video controls preload="metadata" src="${h(s.signedUrl)}"></video>`;
+  }
+  box.classList.remove('hidden');
 }
 async function requestUnlock(){
   const { data: s } = await sb.auth.getSession();
