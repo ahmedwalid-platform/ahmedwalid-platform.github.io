@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126h';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126i';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +126,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126h" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126i" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -135,6 +135,7 @@ function instructorCard(){
 
 function viewLogin(){
   setMsg(`
+  ${freeCardPublic()}
   ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ إنشاء حساب / دخول</button><p class="small" style="margin-top:8px">اعمل حساب مجاني وشوف الكورس التعريفي، وبعدها اشترك في الكورس الأساسي.</p></div>`)}
   <div class="split">
     ${instructorCard()}
@@ -185,8 +186,16 @@ async function logout(){ await sb.auth.signOut(); location.reload(); }
 function freeCard(){
   return `<div class="card" style="border:1px solid rgba(52,211,153,.5);margin-bottom:20px">
     <h2>🎁 كورس تعريفي مجاني</h2>
+    <div style="margin:10px 0"><span class="stat" style="background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;padding:6px 16px;border-radius:999px;font-weight:800;display:inline-block">💰 السعر: مجاني</span></div>
     <p class="small" style="margin:8px 0 14px">فيديو شرح عن الكورس ومحتواه وطريقة الاشتراك. مجاني لأي حد عامل حساب.</p>
     <button class="btn green" id="enterFreeBtn" onclick="enterFree()">▶ دخول الكورس المجاني</button>
+  </div>`;
+}
+function freeCardPublic(){
+  return `<div class="card" style="border:1px solid rgba(52,211,153,.5);margin-bottom:20px">
+    <h2>🎁 كورس تعريفي مجاني</h2>
+    <div style="margin:10px 0"><span class="stat" style="background:linear-gradient(135deg,#10b981,#0d9488);color:#fff;padding:6px 16px;border-radius:999px;font-weight:800;display:inline-block">💰 السعر: مجاني</span></div>
+    <p class="small" style="margin:8px 0 14px">فيديو شرح عن الكورس ومحتواه. اعمل حساب مجاني وادخل عليه.</p>
   </div>`;
 }
 function enterFree(){ studentView='free'; window.scrollTo(0,0); route(); }
