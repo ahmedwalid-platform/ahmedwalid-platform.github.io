@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126l';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126m';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +126,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126l" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126m" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -145,7 +145,7 @@ function viewLogin(){
       <label>البريد الإلكتروني</label>
       <input id="email" type="email" dir="ltr" placeholder="example@gmail.com">
       <label>كلمة السر</label>
-      <input id="pass" type="password" dir="ltr">
+      <input id="pass" type="password" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('pass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
       <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
       <p class="small center" style="margin-top:12px"><a href="#" id="forgotLink" onclick="viewForgot();return false">نسيت كلمة السر؟</a></p>
       <p class="small center" style="margin-top:16px">لسه معملتش حساب؟ <a href="#" onclick="viewSignup();return false">إنشاء حساب جديد</a></p>
@@ -163,7 +163,7 @@ function viewSignup(){
       <label>الاسم بالكامل</label><input id="name">
       <label>رقم الموبايل (مطلوب)</label><input id="phone" dir="ltr" inputmode="numeric" placeholder="01xxxxxxxxx" required>
       <label>البريد الإلكتروني</label><input id="email" type="email" dir="ltr">
-      <label>كلمة السر</label><input id="pass" type="password" dir="ltr">
+      <label>كلمة السر</label><input id="pass" type="password" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('pass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
       <button class="btn" style="width:100%" onclick="doSignup()">إنشاء الحساب</button>
       <p class="small center" style="margin-top:16px">عندك حساب؟ <a href="#" onclick="viewLogin();return false">تسجيل الدخول</a></p>
     </div>
@@ -174,11 +174,15 @@ async function doSignup(){
   const name=v('name'), phone=v('phone'), email=v('email'), pass=v('pass');
   if(!name||!email||!pass||!phone){ m('m', msgBox('املأ الاسم ورقم الموبايل والإيميل وكلمة السر','err')); return; }
   if(!/^01[0125][0-9]{8}$/.test(normPhone(phone))){ m('m', msgBox('رقم الموبايل لازم يكون رقم مصري صحيح (11 رقم بيبدأ بـ 01)','err')); return; }
-  if(pass.length<8){ m('m', msgBox('كلمة السر لازم تكون 8 حروف على الأقل','err')); return; }
+  if(pass.length<6){ m('m', msgBox('كلمة السر لازم تكون 6 حروف أو أرقام على الأقل','err')); return; }
   phone = normPhone(phone);
   const { data, error } = await sb.auth.signUp({ email, password: pass });
-  if(error){ m('m', msgBox(h(error.message),'err')); return; }
-  await sb.from('students').insert({ id: data.user.id, full_name: name, phone, email });
+  if(error){
+    const t=(error.message||'').toLowerCase();
+    m('m', msgBox(t.includes('already')?'الإيميل ده متسجل قبل كده. جرّب تسجيل الدخول أو "نسيت كلمة السر".':t.includes('password')?'كلمة السر لازم تكون 6 حروف أو أرقام على الأقل':t.includes('rate')?'محاولات كتير، استنى شوية وجرّب تاني':t.includes('invalid')?'اكتب إيميل صحيح':'حصل خطأ في التسجيل، جرّب تاني','err')); return; }
+  if(!data.session){ m('m', msgBox('الإيميل ده متسجل قبل كده. جرّب تسجيل الدخول أو "نسيت كلمة السر".','err')); return; }
+  const ins = await sb.from('students').insert({ id: data.user.id, full_name: name, phone, email });
+  if(ins.error){ m('m', msgBox('الحساب اتعمل بس حصل خطأ في حفظ البيانات. اعمل تسجيل دخول وكلّم أحمد لو المشكلة فضلت.','err')); }
   route();
 }
 function viewForgot(){
@@ -201,15 +205,18 @@ async function sendForgot(){
   m('m', msgBox('طلبك وصل ✅ أحمد هيبعتلك كلمة سر مؤقتة على واتساب على الرقم ده في أقرب وقت.','ok'));
 }
 async function doLogin(){
-  const { error } = await sb.auth.signInWithPassword({ email: v('email'), password: v('pass') });
-  if(error){ m('m', msgBox('الإيميل أو كلمة السر غلط','err')); return; }
+  const em=v('email').toLowerCase(), pw=document.getElementById('pass').value;
+  let { error } = await sb.auth.signInWithPassword({ email: em, password: pw.trim() });
+  if(error && pw!==pw.trim()) ({ error } = await sb.auth.signInWithPassword({ email: em, password: pw }));
+  if(error){ const t=(error.message||'').toLowerCase();
+    m('m', msgBox(t.includes('rate')?'محاولات كتير، استنى شوية وجرّب تاني':t.includes('invalid login')||t.includes('credentials')?'الإيميل أو كلمة السر غلط. دوس "إظهار كلمة السر" وراجع اللي كتبته، أو دوس "نسيت كلمة السر؟".':'حصل خطأ، جرّب تاني','err')); return; }
   route();
 }
 async function logout(){ await sb.auth.signOut(); location.reload(); }
 
 function pwCard(){
   return `<div class="card" style="max-width:640px;margin:22px auto"><h3 style="margin-bottom:10px">🔑 تغيير كلمة السر</h3>
-    <div id="pwmsg"></div><label>كلمة السر الجديدة (8 حروف على الأقل)</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password">
+    <div id="pwmsg"></div><label>كلمة السر الجديدة (8 حروف على الأقل)</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('newpass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
     <button class="btn" onclick="changeAdminPassword()">حفظ كلمة السر</button></div>`;
 }
 function freeCard(){
@@ -384,7 +391,7 @@ async function viewAdmin(user){
   <div class="card">
     <h2 style="margin-bottom:14px">🔑 تغيير كلمة سر الأدمن</h2>
     <div id="pwmsg"></div>
-    <label>كلمة السر الجديدة</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password">
+    <label>كلمة السر الجديدة</label><input id="newpass" type="password" dir="ltr" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"><label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" onchange="document.getElementById('newpass').type=this.checked?'text':'password'"> إظهار كلمة السر</label>
     <button class="btn" onclick="changeAdminPassword()">حفظ كلمة السر</button>
   </div>
   <div class="card">
