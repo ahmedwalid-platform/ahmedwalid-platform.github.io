@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126s';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126t';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -169,7 +169,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126s" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126t" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -433,6 +433,7 @@ async function viewAdmin(user){
   const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
+  const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(30);
   const { data: wtx } = await sb.from('wallet_transactions').select('*').order('created_at',{ascending:false}).limit(30);
   const { data: resets } = await sb.from('password_reset_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   _students = students||[];
@@ -440,7 +441,7 @@ async function viewAdmin(user){
   const reqRows = (reqs||[]).map(r=>`<tr>
     <td>${h(r.sender_name || nameOf(r.student_id))}</td>
     <td class="small">${new Date(r.created_at).toLocaleString('ar-EG')}</td>
-    <td><button class="btn green" onclick="approve('${r.student_id}', ${r.id})">موافقة ✅</button>
+    <td><button class="btn green" onclick="approve('${r.student_id}', ${r.id})">تمت المراجعة ✅</button>
     <button class="btn red" onclick="rejectReq(${r.id})">رفض</button></td></tr>`).join('');
   const resetRows = (resets||[]).map(r=>{
     const st=(students||[]).find(x=>(x.email||'').toLowerCase()===r.email.toLowerCase());
@@ -457,6 +458,7 @@ async function viewAdmin(user){
       <button class="btn ghost" ${st==='active'?'':'disabled'} onclick="setActive('${s.id}', false)">إلغاء التفعيل</button>
       <button class="btn red" onclick="deleteStudent('${s.id}','${h(s.full_name).replace(/'/g,'')}')">حذف الحساب</button>`}</td></tr>`; }).join('');
   const wtxRows = (wtx||[]).map(t=>`<tr><td>${h(nameOf(t.student_id))}</td><td style="color:${t.amount>0?'#34d399':'#fb7185'}"><b>${t.amount>0?'+':''}${fmtMoney(t.amount)}</b></td><td class="small">${t.kind==='topup'?'شحن':t.kind==='purchase'?'شراء كورس':'تعديل'}</td><td>${fmtMoney(t.balance_after)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
+  const alogRows = (alog||[]).map(t=>`<tr><td>${h(t.student_name)}</td><td>${h(t.action)}</td><td>${t.amount==null?'':fmtMoney(t.amount)}</td><td class="small">${h(t.reason)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
   const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   const courseList = (lectures||[]).map((l,i)=>`
     <div class="lecture">
@@ -474,7 +476,7 @@ async function viewAdmin(user){
     ${courseList}
   </div>
   <div class="card">
-    <h2 style="margin-bottom:14px">📩 طلبات التفعيل (${(reqs||[]).length})</h2>
+    <h2 style="margin-bottom:14px">📩 بلاغات التحويل (${(reqs||[]).length})</h2>
     ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">مفيش طلبات منتظرة.</p>'}
   </div>
   <div class="card">
@@ -489,6 +491,19 @@ async function viewAdmin(user){
     <div id="tname" style="margin:6px 0 10px"></div>
     <label>المبلغ (جنيه)</label><input id="tamount" dir="ltr" inputmode="decimal" placeholder="1300">
     <button class="btn" style="width:100%" onclick="topUpByCode()">💰 شحن الرصيد</button>
+  </div>
+  <div class="card" id="manualCard">
+    <h2 style="margin-bottom:6px">🛠️ تصحيح يدوي</h2>
+    <p class="small" style="margin-bottom:12px">لو الطالب دفع ومتسجلش، أو اتخصم منه غلط. كل عملية بتتسجل بالسبب والوقت.</p>
+    <div id="mmsg"></div>
+    <label>كود الطالب</label><input id="mcode" dir="ltr" inputmode="numeric" maxlength="6" placeholder="123456">
+    <label>مبلغ الاسترجاع (موجب) أو الخصم التصحيحي (سالب) - اختياري لو هتفتح الكورس بس</label><input id="mamount" dir="ltr" inputmode="decimal" placeholder="1300">
+    <label>السبب (إجباري)</label><input id="mreason" placeholder="مثلا: اتخصم مرتين بالغلط">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="manualAdjust()">↩️ استرجاع / تعديل الرصيد</button><button class="btn green" onclick="manualGrant()">🔓 فتح الكورس مباشر (من غير خصم)</button></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:14px">📋 سجل العمليات اليدوية</h2>
+    ${alogRows ? `<table><tr><th>الطالب</th><th>العملية</th><th>المبلغ</th><th>السبب</th><th>الوقت</th></tr>${alogRows}</table>` : '<p class="small">لسه مفيش.</p>'}
   </div>
   <div class="card">
     <h2 style="margin-bottom:14px">💰 سجل شحن الرصيد والمشتريات</h2>
@@ -525,7 +540,6 @@ async function viewAdmin(user){
   </div>`);
 }
 async function approve(sid, rid){
-  await sb.from('enrollments').upsert({ student_id: sid, status: 'active', approved_at: new Date().toISOString() });
   await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid);
   route();
 }
@@ -557,8 +571,32 @@ async function changeAdminPassword(){
   m('pwmsg', msgBox('تم تغيير كلمة السر ✅','ok'));
 }
 async function setActive(sid, on){
-  await sb.from('enrollments').upsert({ student_id: sid, status: on ? 'active' : 'pending', approved_at: on ? new Date().toISOString() : null });
+  const reason = prompt(on?'سبب فتح الكورس مباشر (من غير خصم):':'سبب قفل الكورس:', on?'دفع ولم يتسجل':'');
+  if(reason===null) return;
+  if(reason.trim().length<2){ alert('لازم تكتب السبب'); return; }
+  const { error } = await sb.rpc('admin_set_access', { target: sid, active: on, reason });
+  if(error){ alert('حصل خطأ: '+error.message); return; }
   route();
+}
+function _byCode(id){ const c=normPhone(document.getElementById(id).value); return _students.find(x=>x.student_code===c); }
+async function manualAdjust(){
+  const st=_byCode('mcode'); const amt=parseFloat(String(document.getElementById('mamount').value).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))); const reason=document.getElementById('mreason').value.trim();
+  if(!st){ m('mmsg', msgBox('اكتب كود طالب صحيح','err')); return; }
+  if(!amt){ m('mmsg', msgBox('اكتب المبلغ (موجب للاسترجاع، سالب للخصم)','err')); return; }
+  if(reason.length<2){ m('mmsg', msgBox('اكتب السبب','err')); return; }
+  if(!confirm((amt>0?'ترجّع/تضيف ':'تخصم ')+Math.abs(amt)+' جنيه '+(amt>0?'لرصيد ':'من رصيد ')+st.full_name+'؟')) return;
+  const { error } = await sb.rpc('admin_adjust_balance', { target: st.id, amount: amt, reason });
+  if(error){ m('mmsg', msgBox(error.message.includes('check')||error.message.includes('balance')?'الخصم أكبر من رصيد الطالب':'حصل خطأ: '+h(error.message),'err')); return; }
+  await viewAdmin({email:ADMIN_EMAIL}); m('mmsg', msgBox('تم ✅','ok'));
+}
+async function manualGrant(){
+  const st=_byCode('mcode'); const reason=document.getElementById('mreason').value.trim();
+  if(!st){ m('mmsg', msgBox('اكتب كود طالب صحيح','err')); return; }
+  if(reason.length<2){ m('mmsg', msgBox('اكتب السبب','err')); return; }
+  if(!confirm('تفتح الكورس لـ '+st.full_name+' مباشر من غير خصم؟')) return;
+  const { error } = await sb.rpc('admin_set_access', { target: st.id, active: true, reason });
+  if(error){ m('mmsg', msgBox('حصل خطأ: '+h(error.message),'err')); return; }
+  await viewAdmin({email:ADMIN_EMAIL}); m('mmsg', msgBox('الكورس اتفتح للطالب ✅ (من غير خصم)','ok'));
 }
 async function addLecture(){
   const t=v('ltitle'), u=v('lurl');
