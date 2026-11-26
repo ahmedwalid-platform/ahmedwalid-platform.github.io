@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126v';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126w';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -169,7 +169,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126v" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126w" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -359,7 +359,9 @@ async function viewStudent(user){
 async function sourceHtml(u){
   if(!u) return '';
   const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  if(yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen allow="autoplay"></iframe>`;
+  if(yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>`;
+  const gd = u.match(/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?(?:[^#]*&)?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})/);
+  if(gd) return `<iframe src="https://drive.google.com/file/d/${gd[1]}/preview" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
   if(/^https?:\/\//.test(u)) return `<video controls preload="metadata" src="${h(u)}"></video>`;
   const { data: s2, error } = await sb.storage.from('lectures').createSignedUrl(u, 3600);
   if(error || !s2) return '';
@@ -553,10 +555,11 @@ async function viewAdmin(user, role){
     <label>العنوان</label><input id="ltitle">
     <label>الوصف</label><input id="ldesc">
     <h3 style="margin:14px 0 6px">سيرفر 1 (الأساسي)</h3><label>ارفع ملف الفيديو (mp4، لحد 50 ميجا)</label><input id="lfile" type="file" accept="video/mp4,video/*">
-    <label>أو رابط يوتيوب (غير مدرج / Unlisted) بدل الرفع</label><input id="lurl" dir="ltr" placeholder="https://youtu.be/...">
+    <div class="small" style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:12px;padding:10px;margin:8px 0">💡 المحاضرات الطويلة (ساعة ونص مثلاً) مينفعش تترفع هنا لأن الحد 50 ميجا. ارفعها على <b>يوتيوب (غير مدرج / Unlisted)</b> أو على <b>جوجل درايف</b> (شير: أي حد معاه الرابط يشوف) وحط الرابط هنا، والمنصة هتشغّلها جوّه الصفحة لوحدها. كمان ينفع رابط mp4 مباشر. الأفضل: يوتيوب في سيرفر 1 ودرايف في سيرفر 2.</div>
+    <label>أو رابط يوتيوب (غير مدرج) / جوجل درايف / mp4 مباشر بدل الرفع</label><input id="lurl" dir="ltr" placeholder="https://youtu.be/... أو https://drive.google.com/file/d/.../view">
     <h3 style="margin:14px 0 6px">سيرفر 2 (اختياري، نسخة تانية من نفس الفيديو)</h3>
     <label>ارفع ملف الفيديو للسيرفر 2 (mp4، لحد 50 ميجا)</label><input id="lfile2" type="file" accept="video/mp4,video/*">
-    <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج أو رابط mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
+    <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج / جوجل درايف / mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -643,7 +646,7 @@ async function manualGrant(){
 async function uploadOrLink(fileId, urlId, tag){
   const u=v(urlId); const f=document.getElementById(fileId).files[0];
   if(f){
-    if(f.size > 50*1024*1024) return { err:'الملف أكبر من 50 ميجا. صغّره أو ارفعه على يوتيوب (غير مدرج) وحط الرابط.' };
+    if(f.size > 50*1024*1024) return { err:'الملف أكبر من 50 ميجا. ارفعه على يوتيوب (غير مدرج) أو جوجل درايف وحط الرابط.' };
     const ext = (f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'') || 'mp4';
     const path = 'lec-' + tag + '-' + Date.now() + '.' + ext;
     const up = await sb.storage.from('lectures').upload(path, f, { contentType: f.type || 'video/mp4', upsert: false });
