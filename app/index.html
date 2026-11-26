@@ -146,8 +146,14 @@ async function saveProfile(uid){
   if(error){ m('pm', msgBox('حصل خطأ في الحفظ، راجع البيانات وجرّب تاني','err')); return; }
   studentView='home'; await route();
 }
+const alog_=(a,n,r,sid)=>sb.rpc('admin_log',{p_action:a,p_name:n||'-',p_reason:r||'-',p_student:sid||null});
+const PRES_MS=150000;
+const isOnline = ts => ts && (Date.now()-new Date(ts).getTime()) < PRES_MS;
+function presBadge(ts,sid){ const on=isOnline(ts); return `<span class="badge pres ${on?'active':'pending'}" data-sid="${sid}" style="${on?'':'background:rgba(148,163,184,.15);color:#94a3b8;border-color:rgba(148,163,184,.35)'}">${on?'🟢 نشط':'غير نشط'}</span>`; }
+function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence'); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
+function watchPresence(){ if(window._presW) clearInterval(window._presW); window._presW=setInterval(async()=>{ const els=document.querySelectorAll('.pres[data-sid]'); if(!els.length){ clearInterval(window._presW); return; } const { data } = await sb.from('students').select('id,last_seen'); (data||[]).forEach(r=>{ const e=document.querySelector('.pres[data-sid="'+r.id+'"]'); if(e) e.outerHTML=presBadge(r.last_seen,r.id); }); },30000); }
 let curTab='home';
-const TABS_ADMIN=[['home','🏠 الرئيسية'],['courses','🎬 الكورسات'],['profile','👤 الملف الشخصي']];
+const TABS_ADMIN=[['home','🏠 الرئيسية'],['courses','🎬 الكورسات'],['log','📜 السجل'],['profile','👤 الملف الشخصي']];
 const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['profile','👤 الملف الشخصي']];
 const TAB_OF={home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
 function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
@@ -458,7 +464,7 @@ async function viewAdmin(user, role){
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
   const { data: staffRows } = await sb.from('staff').select('*');
-  const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(30);
+  const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(300);
   const { data: wtx } = await sb.from('wallet_transactions').select('*').order('created_at',{ascending:false}).limit(30);
   const { data: resets } = await sb.from('password_reset_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   _students = students||[];
@@ -477,13 +483,15 @@ async function viewAdmin(user, role){
   const stRows = (students||[]).map(s=>{ const st=(s.enrollments&&s.enrollments.status)||'pending'; return `<tr>
     <td>${h(s.full_name)}</td><td dir="ltr"><b>${h(s.student_code||'')}</b></td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
     <td><b>${fmtMoney(s.balance)}</b></td><td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
+    <td>${s.email===ADMIN_EMAIL?'<span class="small">-</span>':presBadge(s.last_seen,s.id)}</td>
     <td style="white-space:nowrap">${s.email===ADMIN_EMAIL?'<span class="small">الأدمن</span>':`
       <button class="btn" onclick="adminProfile('${s.id}')">الملف</button>
       <button class="btn green" ${st==='active'?'disabled':''} onclick="setActive('${s.id}', true)">تفعيل</button>
       <button class="btn ghost" ${st==='active'?'':'disabled'} onclick="setActive('${s.id}', false)">إلغاء التفعيل</button>
       <button class="btn red" onclick="deleteStudent('${s.id}','${h(s.full_name).replace(/'/g,'')}')">حذف الحساب</button>`}</td></tr>`; }).join('');
   const wtxRows = (wtx||[]).map(t=>`<tr><td>${h(nameOf(t.student_id))}</td><td style="color:${t.amount>0?'#34d399':'#fb7185'}"><b>${t.amount>0?'+':''}${fmtMoney(t.amount)}</b></td><td class="small">${t.kind==='topup'?'شحن':t.kind==='purchase'?'شراء كورس':'تعديل'}</td><td>${fmtMoney(t.balance_after)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
-  const alogRows = (alog||[]).map(t=>`<tr><td>${h(t.student_name)}</td><td>${h(t.action)}</td><td>${t.amount==null?'':fmtMoney(t.amount)}</td><td class="small">${h(t.reason)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
+  const whoOf = em => em===ADMIN_EMAIL ? 'أحمد (الأدمن)' : ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase())||{}).full_name ? ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase()).full_name+' (مساعد)') : h(em);
+  const alogRows = (alog||[]).map(t=>`<tr><td class="small" style="white-space:nowrap">${new Date(t.created_at).toLocaleString('ar-EG')}</td><td><b>${whoOf(t.admin_email)}</b></td><td>${h(t.action)}</td><td>${h(t.student_name||'-')}</td><td>${t.amount==null?'':fmtMoney(t.amount)}</td><td class="small">${h(t.reason)}</td></tr>`).join('');
   const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   const courseList = (lectures||[]).map((l,i)=>`
     <div class="lecture">
@@ -527,8 +535,8 @@ async function viewAdmin(user, role){
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="manualAdjust()">↩️ استرجاع / تعديل الرصيد</button><button class="btn green" onclick="manualGrant()">🔓 فتح الكورس مباشر (من غير خصم)</button></div>
   </div>
   <div class="card">
-    <h2 style="margin-bottom:14px">📋 سجل العمليات اليدوية</h2>
-    ${alogRows ? `<table><tr><th>الطالب</th><th>العملية</th><th>المبلغ</th><th>السبب</th><th>الوقت</th></tr>${alogRows}</table>` : '<p class="small">لسه مفيش.</p>'}
+    <h2 style="margin-bottom:6px">📜 سجل كل العمليات</h2><p class="small" style="margin-bottom:12px">كل عملية عملها الأدمن أو المساعدين: مين عملها وإمتى وإيه هي.</p>
+    ${alogRows ? `<table><tr><th>الوقت</th><th>مين</th><th>العملية</th><th>الطالب</th><th>المبلغ</th><th>السبب</th></tr>${alogRows}</table>` : '<p class="small">لسه مفيش.</p>'}
   </div>
   <div class="card">
     <h2 style="margin-bottom:14px">💰 سجل شحن الرصيد والمشتريات</h2>
@@ -550,7 +558,7 @@ async function viewAdmin(user, role){
   </div>
   <div class="card">
     <h2 style="margin-bottom:14px">👥 الطلاب (${(students||[]).length})</h2>
-    <table><tr><th>الاسم</th><th>الكود</th><th>الإيميل</th><th>الموبايل</th><th>الرصيد</th><th>الحالة</th><th></th></tr>${stRows}</table>
+    <table><tr><th>الاسم</th><th>الكود</th><th>الإيميل</th><th>الموبايل</th><th>الرصيد</th><th>الحالة</th><th>التواجد</th><th></th></tr>${stRows}</table>
   </div>
   <div class="card">
     <h2 style="margin-bottom:14px">🔑 تغيير كلمة سر الأدمن</h2>
@@ -583,15 +591,15 @@ async function viewAdmin(user, role){
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
   }
   app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p></div>`);
-  renderTabs('admin', curTab);
-  const RULES=[[/سجل|المساعدين|تصحيح يدوي|تغيير كلمة سر|الملف الشخصي/,'profile'],[/معاينة|محاضر/,'courses'],[/.*/,'home']];
+  renderTabs('admin', curTab); watchPresence();
+  const RULES=[[/سجل/,'log'],[/المساعدين|تصحيح يدوي|تغيير كلمة سر|الملف الشخصي/,'profile'],[/معاينة|محاضر/,'courses'],[/.*/,'home']];
   app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
 }
 async function approve(sid, rid){
-  await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid);
+  await sb.from('unlock_requests').update({ status: 'approved' }).eq('id', rid); await alog_('مراجعة بلاغ تحويل',((_students||[]).find(x=>x.id===sid)||{}).full_name,'تمت المراجعة',sid);
   route();
 }
-async function rejectReq(rid){ await sb.from('unlock_requests').update({ status: 'rejected' }).eq('id', rid); route(); }
+async function rejectReq(rid){ await sb.from('unlock_requests').update({ status: 'rejected' }).eq('id', rid); await alog_('رفض بلاغ تحويل','-','رفض'); route(); }
 async function makeTempPassword(rid, sid, phone){
   const chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const a=new Uint32Array(10); crypto.getRandomValues(a);
@@ -599,15 +607,17 @@ async function makeTempPassword(rid, sid, phone){
   const { error } = await sb.rpc('admin_set_student_password', { target: sid, new_password: pw });
   if(error){ alert('حصل خطأ: '+error.message); return; }
   await sb.from('password_reset_requests').update({ status:'done' }).eq('id', rid);
+  await alog_('كلمة سر مؤقتة لطالب',((_students||[]).find(x=>x.id===sid)||{}).full_name,'طلب نسيان كلمة السر',sid);
   const intl='2'+phone;
   const txt='أهلاً، دي كلمة السر المؤقتة بتاعتك على منصة Ahmed walid: '+pw+'\nادخل بيها وغيّرها من صفحتك (تغيير كلمة السر).';
   document.getElementById('tempbox').innerHTML = `<div class="msg ok">كلمة السر المؤقتة: <b dir="ltr" style="font-size:22px;letter-spacing:2px">${pw}</b><br><a class="btn wa" target="_blank" href="https://wa.me/${intl}?text=${encodeURIComponent(txt)}">ابعتها للطالب على واتساب</a></div>`;
 }
-async function dismissReset(rid){ await sb.from('password_reset_requests').update({ status:'done' }).eq('id', rid); route(); }
+async function dismissReset(rid){ await sb.from('password_reset_requests').update({ status:'done' }).eq('id', rid); await alog_('إخفاء طلب نسيان كلمة سر','-','تجاهل'); route(); }
 async function deleteStudent(sid, name){
   if(!confirm('متأكد إنك عايز تمسح حساب «'+name+'» نهائي؟ هيتمسح الحساب وكل طلباته، وهيقدر يسجل من جديد بنفس الإيميل. مفيش رجوع.')) return;
   const { error } = await sb.rpc('admin_delete_student', { target: sid });
   if(error){ alert('حصل خطأ: '+error.message); return; }
+  await alog_('حذف حساب طالب',name,'حذف نهائي');
   route();
 }
 async function changeAdminPassword(){
@@ -677,9 +687,10 @@ async function addLecture(){
   const s2 = await uploadOrLink('lfile2','lurl2','s2'); if(s2.err){ m('m', msgBox(s2.err,'err')); return; }
   const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0 });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
+  await alog_('إضافة محاضرة','-',t);
   route();
 }
-async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url, video_url2').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); const paths=[l&&l.video_url, l&&l.video_url2].filter(x=>x && !/^https?:\/\//.test(x)); if(paths.length) await sb.storage.from('lectures').remove(paths); route(); }
+async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url, video_url2').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); await alog_('حذف محاضرة','-','محاضرة رقم '+id); const paths=[l&&l.video_url, l&&l.video_url2].filter(x=>x && !/^https?:\/\//.test(x)); if(paths.length) await sb.storage.from('lectures').remove(paths); route(); }
 
 async function route(){
   const s = await getSession();
@@ -687,6 +698,7 @@ async function route(){
   document.getElementById('whoami').innerText = s ? s.user.email : '';
   if(!s){ renderTabs(''); viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
+  startPresence();
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
   if(sf){ return viewAdmin(s.user,'helper'); }
   return viewStudent(s.user);
