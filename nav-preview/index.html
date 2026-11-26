@@ -84,7 +84,7 @@ header{flex-wrap:wrap;gap:10px}
 .tab{background:rgba(139,92,246,.12);border:1px solid rgba(167,139,250,.4);color:#d6c9fd;padding:9px 18px;border-radius:999px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s}
 .tab:hover{background:rgba(139,92,246,.28)}
 .tab.on{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(236,72,153,.4)}
-@media(max-width:760px){header{padding:10px 3vw}header h1{font-size:17px}#tabs{order:3;width:100%;gap:4px;flex-wrap:nowrap}.tab{flex:1 1 0;min-width:0;padding:9px 0;font-size:11.5px;text-align:center;white-space:nowrap;overflow:hidden}}
+@media(max-width:760px){header{padding:10px 3vw}header h1{font-size:17px}#tabs{order:3;width:100%;gap:4px;flex-wrap:nowrap}.tab{flex:1 1 0;min-width:0;padding:6px 2px;font-size:11.5px;line-height:1.25;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;white-space:normal}.tab .ti{font-size:17px}}
 </style>
 </head>
 <body>
@@ -150,7 +150,7 @@ let curTab='home';
 const TABS_ADMIN=[['home','🏠 الرئيسية'],['courses','🎬 الكورسات'],['profile','👤 الملف الشخصي']];
 const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['profile','👤 الملف الشخصي']];
 const TAB_OF={home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
-function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.innerHTML=L.map(t=>`<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')">${t[1]}</button>`).join(''); }
+function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
 function goTab(t){ curTab=t; studentView=t; window.scrollTo(0,0); route(); }
 function goHome(){ studentView='home'; curTab='home'; window.scrollTo(0,0); route(); }
 function enterCourse(){ studentView='lectures'; window.scrollTo(0,0); route(); }
