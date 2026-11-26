@@ -102,7 +102,7 @@ function isAdmin(user){ return user && user.email === ADMIN_EMAIL; }
 function v(id){ return document.getElementById(id).value.trim(); }
 function m(id, html){ document.getElementById(id).innerHTML = html; }
 
-function courseHero(){
+function courseHero(cta){
   return `<div class="hero">
     <h2>دورة أساسيات الفوتوشوب من الصفر 🎨</h2>
     <div>
@@ -116,6 +116,7 @@ function courseHero(){
       <li>تصميم بوستات سوشيال ميديا وإعلانات ومطبوعات</li>
       <li>إزاي تعمل هوية بصرية ومشروع كامل بنفسك</li>
     </ul>
+    ${cta||''}
   </div>`;
 }
 
@@ -131,7 +132,7 @@ function instructorCard(){
 
 function viewLogin(){
   setMsg(`
-  ${courseHero()}
+  ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ دخول الكورس / مشاهدة الفيديو التعريفي</button><p class="small" style="margin-top:8px">سجّل دخولك الأول. الفيديوهات بتفتح للمشتركين المفعّلين بس.</p></div>`)}
   <div class="split">
     ${instructorCard()}
     <div class="card" style="margin-top:6px">
@@ -185,7 +186,7 @@ async function viewStudent(user){
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
     setMsg(`
-    ${courseHero()}
+    ${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس / الفيديو التعريفي (بعد التفعيل)</button><p class="small" style="margin-top:8px">هيتفتحلك أول ما الدفع يتراجع ويتم تفعيل حسابك.</p></div>`)}
     <div class="card" style="max-width:640px;margin:22px auto">
       <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
       <p style="margin:12px 0">حالة الاشتراك: <span class="badge pending">في انتظار التفعيل</span></p>
@@ -209,7 +210,7 @@ async function viewStudent(user){
     <div class="lecture">
       <h3>${i+1}. ${h(l.title)}</h3>
       <p class="small">${h(l.description||'')}</p>
-      <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة</button>
+      <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة الفيديو</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتنزل هنا قريب.','info');
@@ -264,7 +265,18 @@ async function viewAdmin(user){
       ? `<button class="btn red" onclick="setActive('${s.id}', false)">إيقاف</button>`
       : `<button class="btn green" onclick="setActive('${s.id}', true)">تفعيل</button>`)}</td></tr>`; }).join('');
   const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
+  const courseList = (lectures||[]).map((l,i)=>`
+    <div class="lecture">
+      <h3>${i+1}. ${h(l.title)}</h3>
+      <p class="small">${h(l.description||'')}</p>
+      <button class="btn" style="margin-top:12px" onclick="playLecture(${l.id})">▶ شغّل الفيديو</button>
+      <div class="video-box hidden" id="vid-${l.id}"></div>
+    </div>`).join('') || '<p class="small">مفيش محاضرات لسه.</p>';
   setMsg(`
+  <div class="card" id="courseCard">
+    <h2 style="margin-bottom:14px">🎬 دخول الكورس (معاينة الأدمن)</h2>
+    ${courseList}
+  </div>
   <div class="card">
     <h2 style="margin-bottom:14px">📩 طلبات التفعيل (${(reqs||[]).length})</h2>
     ${reqRows ? `<table><tr><th>الاسم</th><th>التاريخ</th><th></th></tr>${reqRows}</table>` : '<p class="small">مفيش طلبات منتظرة.</p>'}
