@@ -593,7 +593,7 @@ async function viewStudent(user){
       ${l.unlocked&&l.max_views>0&&l.views>=l.max_views?'<div class="msg err">🚫 خلصت مرات مشاهدة المحاضرة دي ('+l.max_views+' من '+l.max_views+'). لو محتاج مرات زيادة كلّم أحمد على واتساب.</div>':''}
       ${l.unlocked&&!(l.max_views>0&&l.views>=l.max_views)?`<button class="btn ${l.done?'ghost':''}" style="margin-top:12px" onclick="playLecture(${l.id})">${l.done?'🔁 إعادة المشاهدة':'▶ مشاهدة الفيديو'}</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>`:''}
-      ${l.unlocked?lecReqs(l):''}${l.unlocked?lecExtras(l.id):''}
+      ${l.unlocked?lecReqs(l):''}${l.unlocked?lecExtras(l.id,l):''}
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
   const progCard = _tot ? `<div class="card"><h2>📈 تقدمك في الكورس</h2><div class="pbar"><i style="width:${_pct}%"></i></div><p><b>${_pct}%</b> <span class="small">(${_dn} من ${_tot} محاضرات خلصت)</span></p><p class="small">المحاضرة بتتحسب خلصت لما الفيديو يوصل لآخره، وكمان الامتحان والواجب لو مطلوبين فيها. وبعدها اللي بعدها بتتفتح لوحدها.</p></div>` : '';
@@ -1120,7 +1120,7 @@ async function confirmBuy(){
 async function annHtml(){ try{ const { data } = await sb.rpc('ann_list'); return (data||[]).map(a=>`<div class="card ann" id="ann-${a.id}" style="max-width:640px;margin:0 auto 14px;border:2px solid #38bdf8;position:relative"><button class="btn ghost" style="${_sty_sm};position:absolute;top:10px;left:10px" onclick="annDismiss(${a.id})">✖ إخفاء</button><h3 style="margin-bottom:6px">📢 ${h(a.title)}</h3><p style="white-space:pre-wrap">${h(a.body)}</p><p class="small" style="margin-top:6px">${new Date(a.created_at).toLocaleDateString('ar-EG')}</p></div>`).join(''); }catch(e){ return ''; } }
 async function annDismiss(id){ await sb.rpc('ann_dismiss',{p_id:id}); const e=document.getElementById('ann-'+id); if(e) e.remove(); }
 /* lecture extras: assignments + Q&A */
-function lecExtras(id){ return `<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" style="${_sty_sm}" onclick="toggleAsg(${id})">📝 الواجب</button><button class="btn ghost" style="${_sty_sm}" onclick="toggleQa(${id})">❓ أسئلة وأجوبة</button></div><div id="asg-${id}" class="hidden" style="margin-top:12px"></div><div id="qa-${id}" class="hidden" style="margin-top:12px"></div>`; }
+function lecExtras(id,l){ return `<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">${l&&l.asg_required?'':`<button class="btn ghost" style="${_sty_sm}" onclick="toggleAsg(${id})">📝 الواجب</button>`}<button class="btn ghost" style="${_sty_sm}" onclick="toggleQa(${id})">❓ أسئلة وأجوبة</button></div><div id="asg-${id}" class="hidden" style="margin-top:12px"></div><div id="qa-${id}" class="hidden" style="margin-top:12px"></div>`; }
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' ميجا':Math.max(1,Math.round(b/1024))+' كيلو';
 async function toggleAsg(id){ const el=document.getElementById('asg-'+id); if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; } el.classList.remove('hidden'); await loadAsg(id); }
 async function loadAsg(id){
@@ -1250,12 +1250,12 @@ async function adminExtra(students,lectures){
 /* ===== quiz / required items ===== */
 function lecReqs(l){
   if(!l.quiz_on && !l.asg_required) return '';
-  const ck=(ok,t)=>`<div style="padding:8px 12px;border-radius:10px;background:rgba(10,14,26,.55);margin:6px 0">${ok?'✅':'⬜'} ${t}</div>`;
-  let rows=ck(l.done,'مشاهدة الفيديو لآخره');
-  if(l.quiz_on) rows+=ck(l.quiz_passed,`الامتحان (النجاح من ${l.quiz_pass}%)${l.quiz_best!=null?' · أعلى درجة ليك: '+l.quiz_best+'%':''}${l.quiz_attempts>0?' · محاولات: '+l.quiz_used+' من '+l.quiz_attempts:''}`);
-  if(l.asg_required) rows+=ck(l.asg_mode==='approved'?l.asg_approved:l.asg_count>0, l.asg_mode==='approved'?('الواجب لازم أحمد يوافق عليه'+(l.asg_count>0&&!l.asg_approved?' · اترفع وفي انتظار موافقته ⏳':'')):'رفع الواجب'+(l.asg_count>0?'':''));
-  const btn=l.quiz_on&&!l.quiz_passed?`<button class="btn" style="margin-top:6px;${_sty_sm}" onclick="toggleQuiz(${l.id})">📋 ${l.quiz_used>0?'حاول تاني في الامتحان':'ابدأ الامتحان'}</button>`:'';
-  return `<div style="margin-top:14px;padding:14px;border-radius:14px;border:2px dashed rgba(251,191,36,.6)"><b>🔓 المطلوب عشان تفتح المحاضرة اللي بعدها:</b>${rows}${btn}<div id="quiz-${l.id}" class="hidden" style="margin-top:12px"></div></div>`;
+  const card=(ok,ic,t,st,btn)=>`<div style="flex:1 1 220px;min-width:0;padding:16px;border-radius:16px;background:linear-gradient(160deg,${ok?'rgba(16,185,129,.22),rgba(6,78,59,.35)':'rgba(251,191,36,.16),rgba(124,58,237,.22)'});border:2px solid ${ok?'#34d399':'#fbbf24'}"><div style="font-size:30px">${ic}</div><b style="display:block;margin:6px 0 4px;font-size:17px">${t}</b><p class="small" style="margin-bottom:10px">${st}</p>${btn||''}</div>`;
+  if(!l.done) return `<div style="margin-top:14px;padding:14px;border-radius:14px;border:2px dashed rgba(148,163,184,.5)"><b>🔓 عشان تفتح المحاضرة اللي بعدها:</b><p class="small" style="margin-top:6px">خلّص مشاهدة الفيديو لآخره الأول، وبعدها هيظهرلك ${l.asg_required?'الواجب':''}${l.asg_required&&l.quiz_on?' و':''}${l.quiz_on?'الامتحان':''} كل واحد في كارت لوحده.</p></div>`;
+  let cs=card(true,'🎬','الفيديو','تمت المشاهدة ✅','');
+  if(l.asg_required){ const ok=l.asg_mode==='approved'?l.asg_approved:l.asg_count>0; const st=l.asg_mode==='approved'?(l.asg_approved?'أحمد وافق على الواجب ✅':(l.asg_count>0?'اترفع وفي انتظار موافقة أحمد ⏳':'لازم ترفعه وأحمد يوافق عليه')):(l.asg_count>0?'اترفع ✅':'لازم ترفعه'); cs+=card(ok,'📝','الواجب',st,ok?'':`<button class="btn" style="${_sty_sm}" onclick="toggleAsg(${l.id});setTimeout(()=>{const e=document.getElementById('asg-${l.id}');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},400)">${l.asg_count>0?'📂 افتح الواجب':'⬆️ ارفع الواجب'}</button>`); }
+  if(l.quiz_on){ const ex=l.quiz_attempts>0&&l.quiz_used>=l.quiz_attempts&&!l.quiz_passed; const st=l.quiz_passed?`نجحت ✅ (${l.quiz_best}%)`:`النجاح من ${l.quiz_pass}%${l.quiz_best!=null?' · أعلى درجة: '+l.quiz_best+'%':''}${l.quiz_attempts>0?' · محاولات: '+l.quiz_used+' من '+l.quiz_attempts:''}`; cs+=card(l.quiz_passed,'📋','الامتحان',st,l.quiz_passed||ex?'':`<button class="btn" style="${_sty_sm}" onclick="toggleQuiz(${l.id})">${l.quiz_used>0?'🔄 حاول تاني':'▶ ابدأ الامتحان'}</button>`); }
+  return `<div style="margin-top:14px"><b>🔓 المطلوب عشان تفتح المحاضرة اللي بعدها:</b><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">${cs}</div><div id="quiz-${l.id}" class="hidden" style="margin-top:12px"></div></div>`;
 }
 async function toggleQuiz(id){ const el=document.getElementById('quiz-'+id); if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.innerHTML='<p class="small">جارِ التحميل...</p>'; const r=await sb.rpc('quiz_get',{p_lec:id}); const d=r.data; if(r.error||!d||!d.on){ el.innerHTML=msgBox('الامتحان مش متاح دلوقتي','err'); return; }
   if(d.passed){ el.innerHTML=msgBox('نجحت في الامتحان ✅','ok'); return; }
