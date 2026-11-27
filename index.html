@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261127c';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261127d';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -316,7 +316,7 @@ function courseHero(cta){
 
 function instructorCard(wide){
   return `<div class="inst${wide?' inst-wide':''}"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261127c" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261127d" alt="المدرب أحمد وليد">
     <div class="inst-txt"><h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -363,13 +363,10 @@ function aboutHome(){
   </div>`;
 }
 async function viewLogin(){
-  const HC=await homeCoursesHtml('visitor');
   setMsg(`
-  ${aboutHome()}
-  ${HC}
-  ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ إنشاء حساب / دخول</button><p class="small" style="margin-top:8px">اعمل حساب مجاني وشوف الكورس التعريفي، وبعدها اشترك في الكورس الأساسي.</p></div>`)}
-  <div style="max-width:560px;margin:0 auto">
-    <div class="card" style="margin-top:6px">
+  ${instructorCard(true)}
+  <div style="max-width:560px;width:100%;margin:0 auto">
+    <div class="card" style="margin-top:6px;width:100%;box-sizing:border-box">
       <h2 style="margin-bottom:18px">تسجيل الدخول</h2>
       <div id="m"></div>
       <label>البريد الإلكتروني</label>
@@ -935,12 +932,13 @@ async function route(){ showLoader(); try{ return await _route(); } finally{ hid
 async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
-  document.getElementById('whoami').innerText = s ? s.user.email : '';
+  document.getElementById('whoami').innerText = (s && isAdmin(s.user)) ? s.user.email : '';
   if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); await viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
   startPresence();
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
-  if(sf){ return viewAdmin(s.user,'helper'); }
+  if(sf){ document.getElementById('whoami').innerText=s.user.email; return viewAdmin(s.user,'helper'); }
+  { const { data: me0 } = await sb.from('students').select('full_name').eq('id', s.user.id).maybeSingle(); if(me0&&me0.full_name) document.getElementById('whoami').innerText=me0.full_name; }
   return viewStudent(s.user);
 }
 route();
