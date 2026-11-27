@@ -818,7 +818,7 @@ async function viewAdmin(user, role){
   const wtxRows = (wtx||[]).map(t=>`<tr><td>${h(nameOf(t.student_id))}</td><td style="color:${t.amount>0?'#34d399':'#fb7185'}"><b>${t.amount>0?'+':''}${fmtMoney(t.amount)}</b></td><td class="small">${t.kind==='topup'?'شحن':t.kind==='purchase'?'شراء كورس':'تعديل'}</td><td>${fmtMoney(t.balance_after)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
   const whoOf = em => em===ADMIN_EMAIL ? 'أحمد (الأدمن)' : ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase())||{}).full_name ? ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase()).full_name+' (مساعد)') : h(em);
   const alogRows = (alog||[]).map(t=>`<tr><td class="small" style="white-space:nowrap">${new Date(t.created_at).toLocaleString('ar-EG')}</td><td><b>${whoOf(t.admin_email)}</b></td><td>${h(t.action)}</td><td>${h(t.student_name||'-')}</td><td>${t.amount==null?'':fmtMoney(t.amount)}</td><td class="small">${h(t.reason)}</td></tr>`).join('');
-  const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)} <span class="small">(${h(_cname(l.course_id))})</span></td><td><button class="btn ghost" style="padding:6px 10px" onclick="afOpen(${l.id})">📎 ملفات</button> <button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
+  const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)} <span class="small">(${h(_cname(l.course_id))})</span>${_pubBadge(l)}<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><input id="lp-${l.id}" type="datetime-local" dir="ltr" style="max-width:220px" value="${l.publish_at&&new Date(l.publish_at)>new Date()?_cairoLocal(l.publish_at):''}"><button class="btn ghost" style="padding:6px 10px" onclick="lecPubSet(${l.id},'later')">⏰ حدد الموعد</button><button class="btn ghost" style="padding:6px 10px" onclick="lecPubSet(${l.id},'now')">تظهر دلوقتي</button></div></td><td><button class="btn ghost" style="padding:6px 10px" onclick="afOpen(${l.id})">📎 ملفات</button> <button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   const courseList = (lectures||[]).map((l,i)=>`
     <div class="lecture">
       <h3>${i+1}. ${h(l.title)}</h3>
@@ -909,6 +909,9 @@ async function viewAdmin(user, role){
     <label>مدة الفيديو بالدقايق (مهم لقفل المحاضرات، بيتحسب لوحده لو رفعت ملف)</label><input id="ldur" type="number" dir="ltr" step="0.1" placeholder="مثلاً 45">
     <label>عدد مرات المشاهدة المسموحة لكل طالب (0 = بلا حد)</label><input id="lmaxv" type="number" dir="ltr" min="0" value="5">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
+    <label>موعد ظهور المحاضرة (والامتحان بتاعها) للطلاب</label>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0"><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="lpub" id="lpubNow" value="now" checked style="width:auto" onchange="document.getElementById('lpubAt').disabled=true"> تظهر دلوقتي</label><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="lpub" id="lpubLater" value="later" style="width:auto" onchange="document.getElementById('lpubAt').disabled=false"> تظهر في موعد أحدده</label></div>
+    <input id="lpubAt" type="datetime-local" dir="ltr" disabled><p class="small">بتظهر للطلاب لوحدها في الموعد ده بتوقيت القاهرة حتى لو أنت أوفلاين. قبل الموعد مفيش طالب يشوفها أو يفتحها.</p>
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
   <div class="card">
@@ -1046,11 +1049,16 @@ async function addLecture(){
   let durSec = Math.round(parseFloat(v('ldur')||'0')*60)||null;
   const f1=document.getElementById('lfile').files[0];
   if(!durSec && f1){ durSec = await new Promise(r=>{ const vv=document.createElement('video'); vv.preload='metadata'; vv.onloadedmetadata=()=>r(Math.round(vv.duration)||null); vv.onerror=()=>r(null); vv.src=URL.createObjectURL(f1); setTimeout(()=>r(null),8000); }); }
-  const { error } = await sb.from('lectures').insert({ course_id: (document.getElementById('lcourse')||{}).value||'photoshop', title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
+  const { error } = await sb.from('lectures').insert({ course_id: (document.getElementById('lcourse')||{}).value||'photoshop', title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, publish_at: _pubIso(), duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await alog_('إضافة محاضرة','-',t);
   route();
 }
+function _cairoToIso(v){ if(!v) return null; for(const o of ['+03:00','+02:00']){ const t=new Date(v+':00'+o); if(!isNaN(t)&&_cairoLocal(t.toISOString())===v) return t.toISOString(); } return null; }
+function _pubIso(){ const l=document.getElementById('lpubLater'); if(!l||!l.checked) return null; return _cairoToIso(document.getElementById('lpubAt').value); }
+function _pubBadge(l){ if(!l.publish_at) return ''; const f=new Date(l.publish_at); const fut=f>new Date(); const t=f.toLocaleString('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'}); return fut?` <span class="badge pending">⏰ هتظهر ${t}</span>`:` <span class="badge active">✅ ظهرت ${t}</span>`; }
+async function lecPubSet(id,mode){ let iso=null; if(mode==='later'){ const v=document.getElementById('lp-'+id).value; iso=_cairoToIso(v); if(!iso){ alert('اختار تاريخ ووقت صح'); return; } if(new Date(iso)<=new Date()){ alert('الموعد لازم يكون في المستقبل. لو عايزها تظهر دلوقتي دوس "تظهر دلوقتي".'); return; } if(!confirm('هتختفي من الطلاب لحد الموعد ده. تكمّل؟')) return; } else { if(!confirm('هتظهر للطلاب فورًا. تكمّل؟')) return; }
+  const { error } = await sb.from('lectures').update({ publish_at: iso }).eq('id',id); if(error){ alert('حصل خطأ: '+error.message); return; } route(); }
 async function delLecture(id){ if(!confirm('متأكد من حذف المحاضرة؟')) return; const { data: l } = await sb.from('lectures').select('video_url, video_url2').eq('id', id).single(); await sb.from('lectures').delete().eq('id', id); await alog_('حذف محاضرة','-','محاضرة رقم '+id); const paths=[l&&l.video_url, l&&l.video_url2].filter(x=>x && !/^https?:\/\//.test(x)); if(paths.length) await sb.storage.from('lectures').remove(paths); route(); }
 
 let _loaderT=0;
