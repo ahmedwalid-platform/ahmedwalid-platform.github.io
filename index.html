@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){try{var P=new URLSearchParams(location.search).get('promo');if(P)localStorage.setItem('aw_promo',P.slice(0,40))}catch(e){}var B='20261127v';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){try{var P=new URLSearchParams(location.search).get('promo');if(P)localStorage.setItem('aw_promo',P.slice(0,40))}catch(e){}var B='20261127w';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -359,11 +359,12 @@ function instructorCard(wide){
 function renderHomeCourses(list,mode,active){
   const items=[{free:true,id:'free',title:'كورس تعريفي مجاني',price:0}].concat((list||[]).map(c=>({id:c.id,title:c.title,price:Number(c.price),sale:c.sale_price!=null?Number(c.sale_price):null,ends:c.sale_ends_at})));
   const card=c=>{
+    const own = mode==='student' && (!!window._asStudent || (window._myCourses||[]).includes(c.id));
     let btn;
     if(c.free) btn = mode==='student' ? `<button class="btn green" onclick="enterFree()">▶ دخول الكورس المجاني</button>` : `<button class="btn green" onclick="goSignup()">▶ اعمل حساب وادخل</button>`;
     else if(mode!=='student') btn = `<button class="btn" onclick="goSignup()">🛒 اعمل حساب واشترك</button>`;
-    else btn = active ? `<button class="btn" onclick="studentView='lectures';route()">▶ دخول الكورس</button>` : `<button class="btn" onclick="goTab('courses')">🛒 اشتري الآن</button>`;
-    const badge = c.free ? '<span class="badge active">💰 مجاني</span>' : (mode==='student'&&active ? '<span class="badge active">✅ مدفوع ومفتوح</span>' : (c.sale!=null?`<span class="badge pending">💳 <s style="opacity:.6">${fmtMoney(c.price)}</s> <b style="color:#4ade80">${fmtMoney(c.sale)} جنيه</b> 🔥 عرض</span>`:`<span class="badge pending">💳 ${fmtMoney(c.price)} جنيه</span>`));
+    else btn = own ? `<button class="btn" onclick="enterCourse('${c.id}')">▶ دخول الكورس</button>` : `<button class="btn" onclick="goTab('courses')">🛒 اشتري الآن</button>`;
+    const badge = c.free ? '<span class="badge active">💰 مجاني</span>' : (own ? '<span class="badge active">✅ مدفوع ومفتوح</span>' : (c.sale!=null?`<span class="badge pending">💳 <s style="opacity:.6">${fmtMoney(c.price)}</s> <b style="color:#4ade80">${fmtMoney(c.sale)} جنيه</b> 🔥 عرض</span>`:`<span class="badge pending">💳 ${fmtMoney(c.price)} جنيه</span>`));
     return `<div class="ccard ${c.free?'free':'paid'}"><span class="ci">${c.free?'🎁':'🎨'}</span><h3>${h(c.title)}</h3><div>${badge}</div>${btn}</div>`;
   };
   const first=items.slice(0,6).map(card).join(''), rest=items.slice(6).map(card).join('');
@@ -543,7 +544,9 @@ function viewFree(st){
 async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
-  const active = !!(en && en.status === 'active') || !!window._asStudent;
+  const { data: _ce } = await sb.from('course_enrollments').select('course_id,status').eq('student_id', user.id);
+  window._myCourses = (_ce||[]).filter(x=>x.status==='active').map(x=>x.course_id);
+  const active = !!(en && en.status === 'active') || !!window._asStudent || window._myCourses.length>0;
   window._uid=user.id; await promoTry();
   if(!['home','free','courses','lectures','wallet','profile','inbox','chat','weekly','bank','exams','asg','qa','ann','lb','cert','verify'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
@@ -584,14 +587,19 @@ async function viewStudent(user){
   if(studentView==='courses'){
     const { data: cr } = await sb.rpc('course_price_info',{p_course:'photoshop'});
     window._course = { id:'photoshop', title:(cr&&cr.title)||'دورة أساسيات الفوتوشوب من الصفر', price:Number(cr&&cr.price!=null?cr.price:COURSE_PRICE), sale:(cr&&cr.sale_price!=null)?Number(cr.sale_price):null, ends:cr&&cr.sale_ends_at };
-    let _cont=''; if(active){ try{ const { data: _ls } = await sb.rpc('student_lectures'); const _a=_ls||[]; const _c=_a.find(l=>l.unlocked&&!l.complete); const _i=_c?_a.indexOf(_c)+1:0; if(_c) _cont=`<button class="btn" style="margin-top:12px;width:100%;background:linear-gradient(135deg,#f59e0b,#ec4899)" onclick="continueCourse(${_c.id})">⏩ كمّل من حيث وقفت: ${_i}. ${h(_c.title)}</button>`; else if(_a.length&&_a.every(l=>l.complete)) _cont='<p class="small" style="margin-top:12px">🎉 خلصت كل المحاضرات!</p>'; }catch(e){} }
-    const cta = active
-      ? `<div style="margin-top:16px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span>${_cont}<button class="btn ${_cont?'ghost':''}" id="enterBtn" style="margin-top:12px;width:100%" onclick="studentView='lectures';route()">▶ دخول الكورس</button></div>`
+    const actP = !!window._asStudent || (window._myCourses||[]).includes('photoshop'); let _cont=''; if(actP){ try{ const { data: _ls } = await sb.rpc('student_lectures_v2'); const _a=(_ls||[]).filter(x=>x.course_id==='photoshop'); const _c=_a.find(l=>l.unlocked&&!l.complete); const _i=_c?_a.indexOf(_c)+1:0; if(_c) _cont=`<button class="btn" style="margin-top:12px;width:100%;background:linear-gradient(135deg,#f59e0b,#ec4899)" onclick="continueCourse(${_c.id})">⏩ كمّل من حيث وقفت: ${_i}. ${h(_c.title)}</button>`; else if(_a.length&&_a.every(l=>l.complete)) _cont='<p class="small" style="margin-top:12px">🎉 خلصت كل المحاضرات!</p>'; }catch(e){} }
+    const cta = actP
+      ? `<div style="margin-top:16px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span>${_cont}<button class="btn ${_cont?'ghost':''}" id="enterBtn" style="margin-top:12px;width:100%" onclick="enterCourse('photoshop')">▶ دخول الكورس</button></div>`
       : `<div style="margin-top:16px"><p style="font-size:18px;margin-bottom:10px">💳 السعر: ${priceHtml(window._course)} <span class="small">(رصيدك: ${fmtMoney(st&&st.balance)} جنيه)</span></p><div id="buymsg"></div><button class="btn" id="buyBtn" style="width:100%" onclick="askBuy()">🛒 اشتري الآن</button></div>`;
-    setMsg((await promoCardHtml())+freeCard()+courseHero(cta));
+    setMsg((await promoCardHtml())+freeCard()+courseHero(cta)+(await otherCoursesHtml()));
     return;
   }
-  const { data: lectures } = await sb.rpc('student_lectures');
+  const { data: _lall } = await sb.rpc('student_lectures_v2'); const _mc=window._myCourses||[];
+  const { data: _cl } = await sb.from('courses').select('id,title'); const _ct=id=>((_cl||[]).find(x=>x.id===id)||{}).title||id;
+  const _avail = window._asStudent ? [...new Set((_lall||[]).map(x=>x.course_id))] : _mc;
+  if(!window._curCourse||!_avail.includes(window._curCourse)) window._curCourse=_avail[0]||'photoshop';
+  const lectures=(_lall||[]).filter(l=>l.course_id===window._curCourse);
+  const _sw = _avail.length>1 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${_avail.map(id=>{ const t=_ct(id); return `<button class="btn ${id===window._curCourse?'':'ghost'}" onclick="enterCourse('${h(id)}')">${h(t)}</button>`; }).join('')}</div>` : '';
   window._wmText = st ? ((st.phone||'')+' · '+(st.student_code||'')) : '';
   window._trackOn = {}; (lectures||[]).forEach(l=>{ window._trackOn[l.id]=true; });
   const _tot=(lectures||[]).length, _dn=(lectures||[]).filter(l=>l.complete).length, _pct=_tot?Math.round(_dn*100/_tot):0;
@@ -607,7 +615,7 @@ async function viewStudent(user){
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
   const progCard = _tot ? `<div class="card"><h2>📈 تقدمك في الكورس</h2><div class="pbar"><i style="width:${_pct}%"></i></div><p><b>${_pct}%</b> <span class="small">(${_dn} من ${_tot} محاضرات خلصت)</span></p><p class="small">المحاضرة بتتحسب خلصت لما الفيديو يوصل لآخره، وكمان الامتحان والواجب لو مطلوبين فيها. وبعدها اللي بعدها بتتفتح لوحدها.</p></div>` : '';
-  setMsg(`
+  setMsg(`${_sw}
   <div style="text-align:left;margin-bottom:12px"><button class="btn ghost" id="backCourses" onclick="studentView='courses';window.scrollTo(0,0);route()">← رجوع للكورسات</button></div>
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
@@ -776,7 +784,8 @@ async function downloadBackup(){
 async function viewAdmin(user, role){
   const isMain = !role || role==='main'; window._isMain=isMain;
   setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
-  const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
+  const { data: students } = await sb.from('students').select('*, enrollments(status), course_enrollments(course_id,status)').order('created_at',{ascending:false});
+  const { data: acourses } = await sb.from('courses').select('id,title').order('title'); window._acourses=acourses||[];
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
   const { data: staffRows } = await sb.from('staff').select('*');
@@ -800,18 +809,16 @@ async function viewAdmin(user, role){
     <td>${st?`<button class="btn green" onclick="issueResetCode(${r.id},'${st.id}')">إصدار كود إعادة تعيين</button>`:''} <button class="btn red" onclick="dismissReset(${r.id})">تجاهل</button></td></tr>`; }).join('');
   const stRows = (students||[]).map(s=>{ const st=(s.enrollments&&s.enrollments.status)||'pending'; return `<tr class="strow" data-s="${h(((s.full_name||'')+' '+(s.email||'')+' '+(s.phone||'')+' '+(s.student_code||'')).toLowerCase())}" data-st="${st}">
     <td>${h(s.full_name)}</td><td dir="ltr"><b>${h(s.student_code||'')}</b></td><td class="small" dir="ltr">${h(s.email||'')}</td><td dir="ltr">${h(s.phone||'')}</td>
-    <td><b>${fmtMoney(s.balance)}</b></td><td><span class="badge ${st==='active'?'active':'pending'}">${st==='active'?'مفعّل':'منتظر'}</span></td>
+    <td><b>${fmtMoney(s.balance)}</b></td><td>${s.email===ADMIN_EMAIL?'-':courseBadges(s,acourses)}</td>
     <td>${s.email===ADMIN_EMAIL?'<span class="small">-</span>':presBadge(s.last_seen,s.id)}</td>
     <td style="white-space:nowrap">${s.email===ADMIN_EMAIL?'<span class="small">الأدمن</span>':`
       <button class="btn" onclick="adminProfile('${s.id}')">الملف</button>
-      <button class="btn green" ${st==='active'?'disabled':''} onclick="setActive('${s.id}', true)">تفعيل</button>
-      <button class="btn ghost" ${st==='active'?'':'disabled'} onclick="setActive('${s.id}', false)">إلغاء التفعيل</button>
-      <button class="btn ghost" onclick="restartCourse('${s.id}','${h(s.full_name).replace(/'/g,'')}')">🔁 إعادة من الأول</button>
+      <div style="margin:6px 0;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,.05)">${courseCtl(s,acourses)}</div>
       <button class="btn red" onclick="deleteStudent('${s.id}','${h(s.full_name).replace(/'/g,'')}')">حذف الحساب</button>`}</td></tr>`; }).join('');
   const wtxRows = (wtx||[]).map(t=>`<tr><td>${h(nameOf(t.student_id))}</td><td style="color:${t.amount>0?'#34d399':'#fb7185'}"><b>${t.amount>0?'+':''}${fmtMoney(t.amount)}</b></td><td class="small">${t.kind==='topup'?'شحن':t.kind==='purchase'?'شراء كورس':'تعديل'}</td><td>${fmtMoney(t.balance_after)}</td><td class="small">${new Date(t.created_at).toLocaleString('ar-EG')}</td></tr>`).join('');
   const whoOf = em => em===ADMIN_EMAIL ? 'أحمد (الأدمن)' : ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase())||{}).full_name ? ((students||[]).find(x=>(x.email||'').toLowerCase()===(em||'').toLowerCase()).full_name+' (مساعد)') : h(em);
   const alogRows = (alog||[]).map(t=>`<tr><td class="small" style="white-space:nowrap">${new Date(t.created_at).toLocaleString('ar-EG')}</td><td><b>${whoOf(t.admin_email)}</b></td><td>${h(t.action)}</td><td>${h(t.student_name||'-')}</td><td>${t.amount==null?'':fmtMoney(t.amount)}</td><td class="small">${h(t.reason)}</td></tr>`).join('');
-  const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)}</td><td><button class="btn ghost" style="padding:6px 10px" onclick="afOpen(${l.id})">📎 ملفات</button> <button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
+  const lecRows = (lectures||[]).map(l=>`<tr><td>${l.sort_order}</td><td>${h(l.title)} <span class="small">(${h(_cname(l.course_id))})</span></td><td><button class="btn ghost" style="padding:6px 10px" onclick="afOpen(${l.id})">📎 ملفات</button> <button class="btn red" onclick="delLecture(${l.id})">حذف</button></td></tr>`).join('');
   const courseList = (lectures||[]).map((l,i)=>`
     <div class="lecture">
       <h3>${i+1}. ${h(l.title)}</h3>
@@ -890,6 +897,7 @@ async function viewAdmin(user, role){
   <div class="card">
     <h2 style="margin-bottom:14px">➕ إضافة محاضرة</h2>
     <div id="m"></div>
+    <label>الكورس اللي المحاضرة تابعة له</label><select id="lcourse" style="width:100%;display:block;margin-bottom:12px;padding:14px;border-radius:14px;background:#0b1020;color:#fff;border:1px solid rgba(255,255,255,.2);font:inherit">${(acourses||[]).map(c=>`<option value="${h(c.id)}">${h(c.title)}</option>`).join('')}</select>
     <label>العنوان</label><input id="ltitle">
     <label>الوصف</label><input id="ldesc">
     <h3 style="margin:14px 0 6px">سيرفر 1 (الأساسي)</h3><label>ارفع ملف الفيديو (mp4، لحد 50 ميجا)</label><input id="lfile" type="file" accept="video/mp4,video/*">
@@ -966,6 +974,18 @@ async function changeAdminPassword(){
   document.getElementById('newpass').value='';
   m('pwmsg', msgBox('تم تغيير كلمة السر ✅','ok'));
 }
+function _cname(id){ const c=(window._acourses||[]).find(x=>x.id===id); return c?c.title:(id||''); }
+function _ceOn(s,cid){ return ((s.course_enrollments||[]).find(x=>x.course_id===cid)||{}).status==='active'; }
+function courseBadges(s,cs){ return (cs||[]).map(c=>{ const on=_ceOn(s,c.id); return `<div style="margin:3px 0"><span class="badge ${on?'active':'pending'}">${on?'✅':'⏳'} ${h(c.title)}: ${on?'مفعّل':'غير مفعّل'}</span></div>`; }).join(''); }
+function courseCtl(s,cs){ return (cs||[]).map(c=>{ const on=_ceOn(s,c.id); const nm=h(s.full_name).replace(/'/g,''); return `<div style="display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap"><span class="small" style="min-width:120px"><b>${h(c.title)}</b></span><button class="btn ${on?'ghost':'green'}" onclick="setCourseActive('${s.id}','${h(c.id)}',${!on})">${on?'إلغاء التفعيل':'تفعيل'}</button><button class="btn ghost" title="إعادة الكورس من الأول" onclick="restartCourse('${s.id}','${nm}','${h(c.id)}')">🔁 من الأول</button></div>`; }).join(''); }
+async function setCourseActive(sid,cid,on){
+  const reason = prompt((on?'سبب فتح كورس «':'سبب قفل كورس «')+_cname(cid)+'» للطالب (من غير خصم):', on?'دفع ولم يتسجل':'');
+  if(reason===null) return;
+  if(reason.trim().length<2){ alert('لازم تكتب السبب'); return; }
+  const { error } = await sb.rpc('admin_set_course_access', { target: sid, p_course: cid, active: on, reason });
+  if(error){ alert('حصل خطأ: '+error.message); return; }
+  route();
+}
 async function setActive(sid, on){
   const reason = prompt(on?'سبب فتح الكورس مباشر (من غير خصم):':'سبب قفل الكورس:', on?'دفع ولم يتسجل':'');
   if(reason===null) return;
@@ -1026,7 +1046,7 @@ async function addLecture(){
   let durSec = Math.round(parseFloat(v('ldur')||'0')*60)||null;
   const f1=document.getElementById('lfile').files[0];
   if(!durSec && f1){ durSec = await new Promise(r=>{ const vv=document.createElement('video'); vv.preload='metadata'; vv.onloadedmetadata=()=>r(Math.round(vv.duration)||null); vv.onerror=()=>r(null); vv.src=URL.createObjectURL(f1); setTimeout(()=>r(null),8000); }); }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
+  const { error } = await sb.from('lectures').insert({ course_id: (document.getElementById('lcourse')||{}).value||'photoshop', title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await alog_('إضافة محاضرة','-',t);
   route();
@@ -1093,8 +1113,13 @@ async function promoCardHtml(){ try{ if(c.sale!=null) return; const { data } = a
   return `<div class="card" id="promoCard" style="max-width:640px;margin:0 auto 18px;text-align:center;border:2px solid #fbbf24"><h3>🎁 كود الخصم بتاعك</h3><div class="paynum" style="direction:ltr">${h(data.code)}</div><p class="small" style="margin-top:6px">خصم ${fmtMoney(data.amount)} جنيه على الكورس. بيتطبق لوحده لما تدوس "اشتري الآن". الكود ليك أنت بس ويتستخدم مرة واحدة.</p>${rem?`<p style="margin-top:8px"><b id="promoLeft" data-exp="${h(data.expires_at)}">⏳ فاضل ${rem} على انتهاء الكود</b></p>`:''}${dates}</div>`; }catch(e){ return ''; } }
 /* buy modal with coupon */
 window._coupon=null;
-async function askBuy(){
-  window._coupon=null;
+function enterCourse(id){ window._curCourse=id; studentView='lectures'; window.scrollTo(0,0); route(); }
+async function otherCoursesHtml(){ const { data } = await sb.rpc('public_courses_v2'); const mc=window._myCourses||[];
+  return (data||[]).filter(c=>c.id!=='photoshop').map(c=>{ const own=!!window._asStudent||mc.includes(c.id); const pr=c.sale_price!=null?`<s style="opacity:.6">${fmtMoney(c.price)}</s> <b style="color:#4ade80">${fmtMoney(c.sale_price)} جنيه</b> <span class="badge active">🔥 عرض${endsTxt(c.sale_ends_at)}</span>`:`<b>${fmtMoney(c.price)} جنيه</b>`;
+    return `<div class="hero" style="margin-top:18px"><h2>${h(c.title)} 🎓</h2>${own?`<div style="margin-top:12px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span><button class="btn" style="margin-top:12px;width:100%" onclick="enterCourse('${h(c.id)}')">▶ دخول الكورس</button></div>`:`<p style="font-size:18px;margin:12px 0">💳 السعر: ${pr}</p><button class="btn" style="width:100%" onclick="askBuy('${h(c.id)}')">🛒 اشتري الآن</button>`}</div>`; }).join(''); }
+async function askBuy(cid){
+  window._coupon=null; cid=cid||'photoshop';
+  if(!window._course||window._course.id!==cid){ const { data: cr } = await sb.rpc('course_price_info',{p_course:cid}); window._course={ id:cid, title:(cr&&cr.title)||'الكورس', price:Number(cr&&cr.price!=null?cr.price:COURSE_PRICE), sale:(cr&&cr.sale_price!=null)?Number(cr.sale_price):null, ends:cr&&cr.sale_ends_at }; }
   const c=window._course||{title:'الكورس',price:COURSE_PRICE};
   const ov=document.createElement('div'); ov.id='buyModal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
@@ -1110,7 +1135,7 @@ const CP_ERR={sale_active:'الكورس عليه عرض دلوقتي، وأكو�
 async function applyCoupon(){
   const code=(document.getElementById('cpIn').value||'').trim(); const box=document.getElementById('cpMsg'); if(!code){ box.innerHTML=msgBox('اكتب الكود الأول','err'); return; }
   const b=document.getElementById('cpBtn'); b.disabled=true;
-  const { data, error } = await sb.rpc('coupon_check_v3',{p_code:code,p_course:'photoshop'}); b.disabled=false;
+  const { data, error } = await sb.rpc('coupon_check_v3',{p_code:code,p_course:(window._course&&window._course.id)||'photoshop'}); b.disabled=false;
   if(error||!data){ box.innerHTML=msgBox('حصل خطأ، جرّب تاني.','err'); return; }
   if(!data.ok){ window._coupon=null; showPrice(); box.innerHTML=msgBox(CP_ERR[data.reason]||'الكود مش صالح.','err'); return; }
   window._coupon={code:data.code,final:Number(data.final),discount:Number(data.discount),teacher:data.teacher}; showPrice();
@@ -1120,7 +1145,7 @@ async function confirmBuy(){
   if(_buying) return; _buying=true;
   const y=document.getElementById('buyYes'), n=document.getElementById('buyNo');
   if(y){ y.disabled=true; y.textContent='جاري الشراء...'; } if(n) n.disabled=true;
-  const { data, error } = await sb.rpc('buy_course_v4', { course: 'photoshop', p_coupon: window._coupon?window._coupon.code:null });
+  const { data, error } = await sb.rpc('buy_course_v5', { course: (window._course&&window._course.id)||'photoshop', p_coupon: window._coupon?window._coupon.code:null });
   _buying=false;
   const box=document.getElementById('buyModalMsg');
   if(error){ if(box) box.innerHTML=msgBox('حصل خطأ، جرّب تاني. ماتخصمش منك حاجة.','err'); if(y){y.disabled=false;y.textContent='✅ أيوه، اشتري';} if(n) n.disabled=false; return; }
@@ -1168,7 +1193,7 @@ async function askQa(id){ const t=document.getElementById('qaq-'+id).value.trim(
 /* certificate */
 function certCardHtml(tot,dn){ if(!tot) return ''; if(dn<tot) return `<div class="card"><h2>🎓 شهادة إتمام الكورس</h2><p class="small">الشهادة بتتفتح لما تخلّص كل المحاضرات (${dn} من ${tot}).</p></div>`; return `<div class="card" style="border:2px solid #fbbf24"><h2>🎓 مبروك! خلّصت الكورس</h2><p class="small" style="margin:6px 0 12px">استلم شهادة إتمام الكورس من أحمد وليد. (شهادة إتمام من المنصة، مش شهادة معتمدة من جهة رسمية.)</p><div id="certBox"><button class="btn" onclick="certClaim()">🎓 استلم شهادتك</button></div></div>`; }
 let _cert=null;
-async function certClaim(){ const box=document.getElementById('certBox'); box.innerHTML='<p class="small">جاري إنشاء الشهادة...</p>'; const { data, error } = await sb.rpc('certificate_claim'); if(error||!data||!data.ok){ box.innerHTML=msgBox('لسه ماخلصتش كل المحاضرات أو حصل خطأ.','err'); return; } _cert=data; await drawCert(data); box.innerHTML=`<canvas id="certCv" style="width:100%;border-radius:12px;border:1px solid rgba(251,191,36,.5)"></canvas><p class="small" style="margin-top:8px">رقم الشهادة: <b dir="ltr">${h(data.code)}</b></p><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="certDl('jpg')">⬇️ تحميل صورة JPG</button><button class="btn ghost" onclick="certDl('pdf')">⬇️ تحميل PDF (للطباعة)</button></div>`; const cv=document.getElementById('certCv'); cv.width=_certCv.width; cv.height=_certCv.height; cv.getContext('2d').drawImage(_certCv,0,0); }
+async function certClaim(){ const box=document.getElementById('certBox'); box.innerHTML='<p class="small">جاري إنشاء الشهادة...</p>'; const { data, error } = await sb.rpc('certificate_claim_v2',{p_course:window._curCourse||'photoshop'}); if(error||!data||!data.ok){ box.innerHTML=msgBox('لسه ماخلصتش كل المحاضرات أو حصل خطأ.','err'); return; } _cert=data; await drawCert(data); box.innerHTML=`<canvas id="certCv" style="width:100%;border-radius:12px;border:1px solid rgba(251,191,36,.5)"></canvas><p class="small" style="margin-top:8px">رقم الشهادة: <b dir="ltr">${h(data.code)}</b></p><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="certDl('jpg')">⬇️ تحميل صورة JPG</button><button class="btn ghost" onclick="certDl('pdf')">⬇️ تحميل PDF (للطباعة)</button></div>`; const cv=document.getElementById('certCv'); cv.width=_certCv.width; cv.height=_certCv.height; cv.getContext('2d').drawImage(_certCv,0,0); }
 let _certCv=null;
 function loadImg(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; }); }
 async function drawCert(d){
@@ -1268,7 +1293,7 @@ async function adminExtra(students,lectures){
   const annRows=(AN.data||[]).map(a=>`<div class="notif"><b>${h(a.title)}</b><p style="margin-top:6px;white-space:pre-wrap">${h(a.body)}</p><p class="small" style="margin-top:6px">${fdt(a.created_at)} · <a href="#" onclick="adminAnnDel(${a.id});return false">🗑️ حذف</a></p></div>`).join('')||'<p class="small">مفيش إعلانات.</p>';
   const ceRows=(CE.data||[]).map(c=>`<tr><td>${h(c.student_name)}</td><td dir="ltr">${h(c.code)}</td><td>${fdt(c.issued_at)}</td></tr>`).join('');
   const QR=await sb.rpc('admin_quiz_results'); const qrRows=(QR.data||[]).map(r=>`<tr><td>${h(nm(r.student_id))}</td><td>${h(lt(r.lecture_id))}</td><td>${r.score}%</td><td>${r.passed?'<span class="badge active">نجح</span>':'<span class="badge pending">لسه</span>'}</td><td>${fdt(r.created_at)}</td></tr>`).join('');
-  const lecOpts=(lectures||[]).slice().sort((a,b)=>(a.sort_order-b.sort_order)||(a.id-b.id)).map(l=>`<option value="${l.id}">${h(l.title)}</option>`).join('');
+  const lecOpts=(lectures||[]).slice().sort((a,b)=>(a.sort_order-b.sort_order)||(a.id-b.id)).map(l=>`<option value="${l.id}">${h(l.title)} (${h(_cname(l.course_id))})</option>`).join('');
   const [PG,RT,WK]=await Promise.all([sb.rpc('admin_progress'),sb.rpc('admin_ratings'),sb.rpc('admin_weekly_report')]);
   const wkHtml=wkCard(WK.data);
   const agoD=t=>{ if(!t) return 'مفيش'; const d=(Date.now()-new Date(t).getTime())/864e5; return d<1?'النهارده':Math.floor(d)+' يوم'; };
@@ -1409,7 +1434,7 @@ async function qbtSave(id){ const d=qbtRead(); const m=document.getElementById('
   if(r.error){ m.innerHTML=msgBox('حصل خطأ، جرّب تاني','err'); return; } window._qbt.draft=null; window._qbt.edit=null; await qbtInit(); document.getElementById('qbtMsg').innerHTML=msgBox('اتحفظ ✅','ok'); }
 async function qbtDel(id){ if(!confirm('تمسح السؤال ده من البنك؟ الامتحانات اللي اتنسخ فيها مش هتتأثر.')) return; await sb.rpc('admin_qbank_del',{p_id:id}); await qbtInit(); }
 /* view as student (preview mode: no writes) */
-if(!window._sbWrapped){ window._sbWrapped=true; const _f=sb.from.bind(sb), _r=sb.rpc.bind(sb); const RO=['student_lectures','student_weekly','bank_courses','bank_list','bank_check','my_qa','my_exams','my_assignments','lecture_files_list','certificate_verify','quiz_get','note_get','promo_my','promo_info','ann_list','qa_list','leaderboard','rating_my','public_courses','public_courses_v2','course_price_info','coupon_check','chat_staff_info','lecture_play'];
+if(!window._sbWrapped){ window._sbWrapped=true; const _f=sb.from.bind(sb), _r=sb.rpc.bind(sb); const RO=['student_lectures','student_lectures_v2','final_status_v2','course_active','student_weekly','bank_courses','bank_list','bank_check','my_qa','my_exams','my_assignments','lecture_files_list','certificate_verify','quiz_get','note_get','promo_my','promo_info','ann_list','qa_list','leaderboard','rating_my','public_courses','public_courses_v2','course_price_info','coupon_check','chat_staff_info','lecture_play'];
   sb.from=function(t){ const b=_f(t); if(!window._asStudent) return b; return new Proxy(b,{get(o,k){ if(['insert','update','upsert','delete'].includes(k)) return ()=>Promise.resolve({data:null,error:{message:'وضع المعاينة'}}); const v=o[k]; return typeof v==='function'?v.bind(o):v; }}); };
   sb.rpc=function(n,a,o){ if(window._asStudent && !RO.includes(n)) return Promise.resolve({data:null,error:{message:'وضع المعاينة'}}); return _r(n,a,o); }; }
 function asBar(){ if(document.getElementById('asBar')) return; const d=document.createElement('div'); d.id='asBar'; d.style.cssText='position:fixed;bottom:10px;left:10px;right:10px;z-index:9998;background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;border-radius:16px;padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-weight:800;box-shadow:0 6px 24px rgba(0,0,0,.4)'; d.innerHTML='<span>👁️ وضع معاينة الطالب: أي حاجة هنا مش بتتسجل</span><button class="btn" style="padding:6px 14px;background:#111827" onclick="exitAs()">خروج</button>'; document.body.appendChild(d); }
@@ -1419,7 +1444,7 @@ function exitAs(){ window._asStudent=false; curTab='asstudent'; asBarOff(); wind
 
 async function finalBannerHtml(active){ try{ if(active||window._asStudent) return ''; const { data } = await sb.rpc('final_status'); if(!data||!data.has_final||!data.exhausted) return ''; return `<div class="card" style="max-width:640px;margin:0 auto 18px;border:2px solid #ef4444"><h3>⛔ اشتراكك اتقفل</h3><p class="small" style="margin-top:6px;line-height:1.9">استخدمت المحاولات التلاتة في الامتحان النهائي ومنجحتش. عشان تكمّل وتاخد الشهادة: ادفع سعر الكورس تاني (السعر العادي للكورس، أو أقل لو معاك كوبون خصم) وابعت اسمك وكودك لأ/ أحمد، وهو هيفتحلك الكورس من الأول والتقدم هيتصفّر.</p></div>`; }catch(e){ return ''; } }
 async function qzFinal(on){ const z=window._qz; const r=await sb.rpc('admin_set_final',{p_lec:z.id,p_on:on}); const m=document.getElementById('qzMsg'); if(r.error){ z.is_final=!on; if(m) m.innerHTML=msgBox(/quiz/.test(r.error.message||'')?'فعّل "فيه امتحان" واحفظ الأول':'حصل خطأ','err'); } else { z.is_final=on; if(on) z.attempts=3; if(m) m.innerHTML=msgBox(on?'اتحدد كامتحان نهائي ✅ (3 محاولات)':'اتشال من كونه نهائي','ok'); } qzRender(); }
-async function restartCourse(sid,name){ if(!confirm('تفتح الكورس من الأول لـ «'+name+'»؟ التقدم والمحاولات والواجبات هتتصفّر (بتتحفظ نسخة في الأرشيف) والكورس هيتفعّل. اعمل ده بعد ما تستلم الدفع بس.')) return; const reason=prompt('سبب إعادة الكورس:','دفع سعر الكورس تاني بعد استنفاد محاولات الامتحان النهائي'); if(reason===null||reason.trim().length<2){ return; } const { error } = await sb.rpc('admin_restart_course',{target:sid,reason}); if(error){ alert('حصل خطأ: '+error.message); return; } route(); }
+async function restartCourse(sid,name,cid){ cid=cid||'photoshop'; if(!confirm('تفتح كورس «'+_cname(cid)+'» من الأول لـ «'+name+'»؟ التقدم والمحاولات والواجبات هتتصفّر (بتتحفظ نسخة في الأرشيف) والكورس هيتفعّل. اعمل ده بعد ما تستلم الدفع بس.')) return; const reason=prompt('سبب إعادة الكورس:','دفع سعر الكورس تاني بعد استنفاد محاولات الامتحان النهائي'); if(reason===null||reason.trim().length<2){ return; } const { error } = await sb.rpc('admin_restart_course_v2',{target:sid,p_course:cid,reason}); if(error){ alert('حصل خطأ: '+error.message); return; } route(); }
 function faqLinkCard(){ return `<div class="card" style="max-width:640px;margin:18px auto"><p class="center"><a class="btn ghost" href="#faq" onclick="location.hash='faq';return false">❓ الأسئلة الشائعة (الدفع، الشحن، الشهادة، الشروط)</a></p></div>`; }
 function viewFaq(inApp){ const qa=[
  ['إزاي أشترك في الكورس؟','اعمل حساب جديد على المنصة، وبعدين اشحن رصيدك واشتري الكورس من صفحة الكورسات. بعد الشراء الكورس بيتفتحلك على طول.'],
