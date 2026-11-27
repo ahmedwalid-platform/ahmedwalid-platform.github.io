@@ -932,12 +932,13 @@ async function route(){ showLoader(); try{ return await _route(); } finally{ hid
 async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
-  document.getElementById('whoami').innerText = s ? s.user.email : '';
+  document.getElementById('whoami').innerText = (s && isAdmin(s.user)) ? s.user.email : '';
   if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); await viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
   startPresence();
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
-  if(sf){ return viewAdmin(s.user,'helper'); }
+  if(sf){ document.getElementById('whoami').innerText=s.user.email; return viewAdmin(s.user,'helper'); }
+  { const { data: me0 } = await sb.from('students').select('full_name').eq('id', s.user.id).maybeSingle(); if(me0&&me0.full_name) document.getElementById('whoami').innerText=me0.full_name; }
   return viewStudent(s.user);
 }
 route();
