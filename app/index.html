@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261127h';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){try{var P=new URLSearchParams(location.search).get('promo');if(P)localStorage.setItem('aw_promo',P.slice(0,40))}catch(e){}var B='20261127i';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -243,10 +243,10 @@ function presBadge(ts,sid){ const on=isOnline(ts); return `<span class="badge pr
 function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence'); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
 function watchPresence(){ if(window._presW) clearInterval(window._presW); window._presW=setInterval(async()=>{ const els=document.querySelectorAll('.pres[data-sid]'); if(!els.length){ clearInterval(window._presW); return; } const { data } = await sb.from('students').select('id,last_seen'); (data||[]).forEach(r=>{ const e=document.querySelector('.pres[data-sid="'+r.id+'"]'); if(e) e.outerHTML=presBadge(r.last_seen,r.id); }); },30000); }
 let curTab='home';
-const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['chats','💬 رسائل الطلاب'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
+const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['chats','💬 رسائل الطلاب'],['asg','📝 الواجبات'],['qa','❓ الأسئلة'],['coupons','🎟️ الكوبونات'],['ann','📢 الإعلانات'],['certs','🎓 الشهادات'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
 const TABS_STUDENT=[['home','🏠 الرئيسية'],['courses','📚 الكورسات'],['wallet','💰 شحن الرصيد'],['chat','💬 المدرب'],['profile','👤 الملف الشخصي']];
 const TAB_OF={chat:'chat',home:'home',free:'home',courses:'courses',lectures:'courses',wallet:'wallet',profile:'profile'};
-function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN:kind==='student'?TABS_STUDENT:[]; n.className=L.length>5?'scroll':''; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
+function renderTabs(kind,active){ const n=document.getElementById('tabs'); const L=kind==='admin'?TABS_ADMIN.filter(t=>window._isMain!==false||!['asg','qa','coupons','ann','certs'].includes(t[0])):kind==='student'?TABS_STUDENT:[]; n.className=L.length>5?'scroll':''; n.innerHTML=L.map(t=>{ const i=t[1].indexOf(' '); return `<button class="tab ${t[0]===active?'on':''}" onclick="goTab('${t[0]}')"><span class="ti">${t[1].slice(0,i)}</span> <span class="tl">${t[1].slice(i+1)}</span></button>`; }).join(''); }
 
 const avEl=(url,name,sid,sz)=>{ sz=sz||38; const base=`width:${sz}px;height:${sz}px;border-radius:50%;flex:0 0 ${sz}px;object-fit:cover;border:2px solid #a78bfa;${sid?'cursor:pointer;':''}`; const clk=sid?` onclick="event.stopPropagation();adminProfile('${sid}')" title="فتح ملف الطالب"`:''; return url?`<img src="${url}" style="${base}"${clk} alt="">`:`<div style="${base}display:flex;align-items:center;justify-content:center;background:#4c1d95;color:#fff;font-weight:800"${clk}>${h((name||'?').trim().charAt(0))}</div>`; };
 const bub=(mine,txt,who,ts,photo,sid)=>`<div style="display:flex;justify-content:${mine?'flex-start':'flex-end'};align-items:flex-end;gap:8px;margin:8px 0">${avEl(photo,who,sid)}<div style="max-width:78%;padding:10px 14px;border-radius:16px;${mine?'background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff':'background:rgba(148,163,184,.18);color:#e5e7eb'}"><div class="small" style="opacity:.9;margin-bottom:3px"><b>${h(who)}</b></div><div style="white-space:pre-wrap;word-break:break-word">${h(txt)}</div><div class="small" style="opacity:.7;margin-top:4px">${new Date(ts).toLocaleString('ar-EG')}</div></div></div>`;
@@ -389,7 +389,7 @@ function aboutHome(){
 }
 async function viewLogin(){
   setMsg(`
-  ${instructorCard(true)}
+  ${promoBannerHtml()}${instructorCard(true)}
   <div style="max-width:560px;width:100%;margin:0 auto">
     <div class="card" style="margin-top:6px;width:100%;box-sizing:border-box">
       <h2 style="margin-bottom:18px">تسجيل الدخول</h2>
@@ -406,7 +406,7 @@ async function viewLogin(){
 }
 function viewSignup(){
   setMsg(`
-  ${courseHero()}
+  ${promoBannerHtml()}${courseHero()}
   <div class="split">
     ${instructorCard()}
     <div class="card" style="margin-top:6px">
@@ -537,6 +537,7 @@ async function viewStudent(user){
   const { data: st } = await sb.from('students').select('*').eq('id', user.id).single();
   const { data: en } = await sb.from('enrollments').select('*').eq('student_id', user.id).single();
   const active = !!(en && en.status === 'active');
+  window._uid=user.id; await promoTry();
   if(!['home','free','courses','lectures','wallet','profile','inbox','chat'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
   renderTabs('student', TAB_OF[studentView]); ensureBot();
@@ -546,7 +547,7 @@ async function viewStudent(user){
   if(studentView==='chat'){ await viewChat(st); return; }
   if(studentView==='profile'){ const ed=!!window._pedit; await viewProfile(st, ed); return; }
   if(studentView==='free'){ viewFree(st); return; }
-  if(studentView==='home'){ setMsg(greet + aboutHome() + await homeCoursesHtml('student',active)); return; }
+  if(studentView==='home'){ setMsg(greet + await promoCardHtml() + await annHtml() + aboutHome() + await homeCoursesHtml('student',active)); return; }
   if(studentView==='wallet'){
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
@@ -577,7 +578,7 @@ async function viewStudent(user){
     const cta = active
       ? `<div style="margin-top:16px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span><button class="btn" id="enterBtn" style="margin-top:12px;width:100%" onclick="studentView='lectures';route()">▶ دخول الكورس</button></div>`
       : `<div style="margin-top:16px"><p style="font-size:18px;margin-bottom:10px">💳 السعر: <b>${fmtMoney(window._course.price)} جنيه</b> <span class="small">(رصيدك: ${fmtMoney(st&&st.balance)} جنيه)</span></p><div id="buymsg"></div><button class="btn" id="buyBtn" style="width:100%" onclick="askBuy()">🛒 اشتري الآن</button></div>`;
-    setMsg(freeCard()+courseHero(cta));
+    setMsg((await promoCardHtml())+freeCard()+courseHero(cta));
     return;
   }
   const { data: lectures } = await sb.rpc('student_lectures');
@@ -592,6 +593,7 @@ async function viewStudent(user){
       ${l.unlocked&&l.max_views>0&&l.views>=l.max_views?'<div class="msg err">🚫 خلصت مرات مشاهدة المحاضرة دي ('+l.max_views+' من '+l.max_views+'). لو محتاج مرات زيادة كلّم أحمد على واتساب.</div>':''}
       ${l.unlocked&&!(l.max_views>0&&l.views>=l.max_views)?`<button class="btn ${l.done?'ghost':''}" style="margin-top:12px" onclick="playLecture(${l.id})">${l.done?'🔁 إعادة المشاهدة':'▶ مشاهدة الفيديو'}</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>`:''}
+      ${l.unlocked?lecExtras(l.id):''}
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
   const progCard = _tot ? `<div class="card"><h2>📈 تقدمك في الكورس</h2><div class="pbar"><i style="width:${_pct}%"></i></div><p><b>${_pct}%</b> <span class="small">(${_dn} من ${_tot} محاضرات خلصت)</span></p><p class="small">المحاضرة بتتحسب خلصت لما الفيديو يوصل لآخره، وبعدها اللي بعدها بتتفتح لوحدها.</p></div>` : '';
@@ -601,7 +603,7 @@ async function viewStudent(user){
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
   </div>
-  ${progCard}
+  ${progCard}${certCardHtml(_tot,_dn)}
   <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الكورس</h2>${list}</div>`);
 }
 async function sourceHtml(u){
@@ -686,30 +688,8 @@ const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
 function fmtMoney(n){ n=Number(n||0); return Number.isInteger(n)?String(n):n.toFixed(2); }
 let _buying=false;
-function askBuy(){
-  const c=window._course||{title:'الكورس',price:COURSE_PRICE};
-  const ov=document.createElement('div'); ov.id='buyModal';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p class="small" style="margin-bottom:8px;color:#fbbf24">⚠️ الشراء نهائي ومفيش استرجاع بعد التأكيد.</p><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
-  document.body.appendChild(ov);
-}
 function closeBuy(){ const o=document.getElementById('buyModal'); if(o) o.remove(); }
-async function confirmBuy(){
-  if(_buying) return; _buying=true;
-  const y=document.getElementById('buyYes'), n=document.getElementById('buyNo');
-  if(y){ y.disabled=true; y.textContent='جاري الشراء...'; } if(n) n.disabled=true;
-  const { data, error } = await sb.rpc('buy_course', { course: 'photoshop' });
-  _buying=false;
-  const box=document.getElementById('buyModalMsg');
-  if(error){ if(box) box.innerHTML=msgBox('حصل خطأ، جرّب تاني. ماتخصمش منك حاجة.','err'); if(y){y.disabled=false;y.textContent='✅ أيوه، اشتري';} if(n) n.disabled=false; return; }
-  if(data==='insufficient'){
-    if(box) box.innerHTML=msgBox('رصيدك مش كفاية لشراء الكورس. شحّن رصيدك الأول من تبويب "شحن الرصيد" وبعدها ارجع اشتري.','err');
-    if(y) y.style.display='none'; if(n){ n.disabled=false; n.textContent='تمام'; }
-    const bt=document.createElement('button'); bt.className='btn'; bt.textContent='💰 روح لشحن الرصيد'; bt.onclick=()=>{closeBuy();goTab('wallet');}; if(n) n.parentNode.prepend(bt);
-    return;
-  }
-  closeBuy(); studentView='courses'; route();
-}
+
 let _students=[];
 function codeLookup(){
   const c=normPhone(document.getElementById('tcode').value);
@@ -784,7 +764,7 @@ async function downloadBackup(){
   }catch(e){ if(m) m.innerHTML=msgBox('حصلت مشكلة في النسخة الاحتياطية.','err'); }
 }
 async function viewAdmin(user, role){
-  const isMain = !role || role==='main';
+  const isMain = !role || role==='main'; window._isMain=isMain;
   setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
   const { data: students } = await sb.from('students').select('*, enrollments(status)').order('created_at',{ascending:false});
   const { data: reqs } = await sb.from('unlock_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
@@ -939,6 +919,7 @@ async function viewAdmin(user, role){
     if(curTab==='inbox' && (anotifs||[]).some(n=>!n.read_at)){ sb.rpc('admin_notifs_read').then(()=>{ const nn=document.getElementById('bellN'); if(nn){ nn.innerText='0'; nn.classList.add('hidden'); } }); } }
   app.insertAdjacentHTML('afterbegin','<div class="card" data-tab="chats"><h2>💬 رسائل الطلاب</h2><div id="chatsBody" style="margin-top:12px"><p class="small">جارِ التحميل...</p></div></div>');
   renderTabs('admin', curTab); watchPresence(); adminChats(); if(window._aChT) clearInterval(window._aChT); window._aChT=setInterval(()=>{ const b=document.getElementById('chatsBody'); if(!b){ clearInterval(window._aChT); return; } if(!document.hidden && curTab==='chats' && !(document.getElementById('aIn')&&document.getElementById('aIn').value)) adminChats(); },10000);
+  if(isMain) await adminExtra(students,lectures);
   const RULES=[[/رسائل الطلاب/,'chats'],[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
   app.querySelectorAll(':scope > .card').forEach(c=>{ let t=c.getAttribute('data-tab'); if(!t){ const hh=(c.querySelector('h2')||{}).innerText||''; t=RULES.find(r=>r[0].test(hh))[1]; } c.style.display = (t===curTab)?'':'none'; });
 }
@@ -1072,7 +1053,7 @@ async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
   document.getElementById('whoami').innerText = (s && isAdmin(s.user)) ? 'أحمد وليد' : '';
-  if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); await viewLogin(); return; }
+  if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); if(localStorage.getItem('aw_promo')) viewSignup(); else await viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
   startPresence();
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
@@ -1080,6 +1061,186 @@ async function _route(){
   { const { data: me0 } = await sb.from('students').select('full_name').eq('id', s.user.id).maybeSingle(); if(me0&&me0.full_name) document.getElementById('whoami').innerText=me0.full_name; }
   return viewStudent(s.user);
 }
+/* ===== batch 2: promo, coupons, assignments, Q&A, certificate, announcements ===== */
+const _sty_sm='padding:8px 14px;font-size:13px';
+function promoBannerHtml(){ setTimeout(promoBannerFill,0); return '<div id="promoBn"></div>'; }
+async function promoBannerFill(){ try{ const t=localStorage.getItem('aw_promo'); const el=document.getElementById('promoBn'); if(!t||!el) return; const { data } = await sb.rpc('promo_info',{p_token:t}); if(data&&data.ok) el.innerHTML=`<div class="card" style="max-width:640px;margin:0 auto 16px;text-align:center;border:2px solid #fbbf24"><h2>🎁 معاك خصم ${fmtMoney(data.amount)} جنيه على الكورس</h2><p class="small" style="margin-top:6px">سجّل حساب جديد وهيتعملك كود خصم خاص بيك لوحدك، وتستخدمه وانت بتشتري الكورس. الكود صالح ${data.days||15} يوم من وقت ما بيتعملك.</p></div>`; else if(data&&data.reason==='notstarted') el.innerHTML=`<div class="card" style="max-width:640px;margin:0 auto 16px;text-align:center;border:2px solid #fbbf24"><h2>⏳ العرض لسه ماابتداش</h2><p class="small" style="margin-top:6px">العرض هيبدأ يوم ${new Date(data.starts).toLocaleDateString('ar-EG',{day:'numeric',month:'long'})}. ارجع للينك وقتها.</p></div>`; else el.innerHTML=`<div class="card" style="max-width:640px;margin:0 auto 16px;text-align:center;border:2px solid #ef4444"><h2>⏰ العرض انتهى</h2><p class="small" style="margin-top:6px">لينك الخصم ده مبقاش شغّال. تقدر تسجّل وتشترك في الكورس عادي بالسعر الأساسي.</p></div>`; }catch(e){} }
+async function promoTry(){ try{ const t=localStorage.getItem('aw_promo'); if(!t||window._promoTried) return; window._promoTried=true; const { data } = await sb.rpc('promo_claim',{p_token:t}); if(data&&(data.ok||['enrolled','phone_used','nophone'].includes(data.reason))) localStorage.removeItem('aw_promo'); }catch(e){} }
+function promoRemain(exp){ const ms=new Date(exp)-Date.now(); if(ms<=0) return null; const d=Math.floor(ms/86400000), hr=Math.floor((ms%86400000)/3600000), mi=Math.floor((ms%3600000)/60000); return d>0?`${d} يوم و ${hr} ساعة`:(hr>0?`${hr} ساعة و ${mi} دقيقة`:`${mi} دقيقة`); }
+function promoTick(){ const e=document.getElementById('promoLeft'); if(!e) return; const r=promoRemain(e.dataset.exp); if(r===null){ route(); return; } e.innerText='⏳ فاضل '+r+' على انتهاء الكود'; }
+async function promoCardHtml(){ try{ const { data } = await sb.rpc('promo_my'); if(!data||!data.ok||data.used) return '';
+  const dt=t=>t?new Date(t).toLocaleString('ar-EG',{day:'numeric',month:'long',hour:'numeric',minute:'2-digit'}):'';
+  const dates=`<p class="small" style="margin-top:6px">اتعمل: ${dt(data.issued_at)}${data.expires_at?` · ينتهي: ${dt(data.expires_at)}`:''}</p>`;
+  const red='<div class="card" id="promoCard" style="max-width:640px;margin:0 auto 18px;text-align:center;border:2px solid #ef4444">';
+  if(data.ended) return `${red}<h3>⏰ العرض انتهى</h3><p class="small">عرض الخصم خلص وكود الخصم بتاعك مبقاش شغّال. تقدر تشترك في الكورس بالسعر الأساسي.</p><div class="paynum" style="direction:ltr;opacity:.5;text-decoration:line-through">${h(data.code)}</div>${dates}</div>`;
+  if(data.expired) return `${red}<h3>⏰ انتهى</h3><p class="small">كود الخصم بتاعك انتهت مدته ومبقاش بيتطبق.</p><div class="paynum" style="direction:ltr;opacity:.5;text-decoration:line-through">${h(data.code)}</div>${dates}</div>`;
+  const rem=data.expires_at?promoRemain(data.expires_at):null; if(window._promoT) clearInterval(window._promoT); if(data.expires_at) window._promoT=setInterval(promoTick,30000);
+  return `<div class="card" id="promoCard" style="max-width:640px;margin:0 auto 18px;text-align:center;border:2px solid #fbbf24"><h3>🎁 كود الخصم بتاعك</h3><div class="paynum" style="direction:ltr">${h(data.code)}</div><p class="small" style="margin-top:6px">خصم ${fmtMoney(data.amount)} جنيه على الكورس. بيتطبق لوحده لما تدوس "اشتري الآن". الكود ليك أنت بس ويتستخدم مرة واحدة.</p>${rem?`<p style="margin-top:8px"><b id="promoLeft" data-exp="${h(data.expires_at)}">⏳ فاضل ${rem} على انتهاء الكود</b></p>`:''}${dates}</div>`; }catch(e){ return ''; } }
+/* buy modal with coupon */
+window._coupon=null;
+async function askBuy(){
+  window._coupon=null;
+  const c=window._course||{title:'الكورس',price:COURSE_PRICE};
+  const ov=document.createElement('div'); ov.id='buyModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p class="small" style="margin-bottom:8px;color:#fbbf24">⚠️ الشراء نهائي ومفيش استرجاع بعد التأكيد.</p><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 6px" id="buyPrice">💳 ${fmtMoney(c.price)} جنيه</p><div style="text-align:right;margin:10px 0"><label class="small">عندك كود خصم؟ (اختياري)</label><div style="display:flex;gap:8px"><input id="cpIn" dir="ltr" placeholder="اكتب الكود" autocapitalize="characters" style="margin-bottom:0"><button class="btn ghost" id="cpBtn" style="${_sty_sm}" onclick="applyCoupon()">تطبيق</button></div><div id="cpMsg" style="margin-top:8px"></div></div><p class="small" style="margin-bottom:14px" id="buyHow">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
+  document.body.appendChild(ov);
+  document.getElementById('cpIn').addEventListener('input',()=>{ if(window._coupon){ window._coupon=null; showPrice(); document.getElementById('cpMsg').innerHTML=''; } });
+  try{ const { data } = await sb.rpc('promo_my'); if(data&&data.ok&&!data.used&&!data.ended&&!data.expired){ document.getElementById('cpIn').value=data.code; applyCoupon(); } }catch(e){}
+}
+function showPrice(){ const c=window._course||{price:COURSE_PRICE}; const p=document.getElementById('buyPrice'); const k=window._coupon; if(!p) return; p.innerHTML = k ? `💳 <s style="opacity:.6">${fmtMoney(c.price)}</s> <b style="color:#4ade80">${fmtMoney(k.final)} جنيه</b>` : `💳 ${fmtMoney(c.price)} جنيه`; const hw=document.getElementById('buyHow'); if(hw) hw.innerText = k ? `هيتخصم ${fmtMoney(k.final)} جنيه من رصيد محفظتك (بعد الخصم) والكورس هيتفتحلك على طول.` : 'هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.'; }
+const CP_ERR={invalid:'الكود ده مش صح.',expired:'الكود ده انتهت مدته.',maxed:'الكود ده خلصت مرات استخدامه.',used:'انت استخدمت الكود ده قبل كده.',too_many:'محاولات كتير، استنى شوية وجرّب تاني.'};
+async function applyCoupon(){
+  const code=(document.getElementById('cpIn').value||'').trim(); const box=document.getElementById('cpMsg'); if(!code){ box.innerHTML=msgBox('اكتب الكود الأول','err'); return; }
+  const b=document.getElementById('cpBtn'); b.disabled=true;
+  const { data, error } = await sb.rpc('coupon_check',{p_code:code,p_course:'photoshop'}); b.disabled=false;
+  if(error||!data){ box.innerHTML=msgBox('حصل خطأ، جرّب تاني.','err'); return; }
+  if(!data.ok){ window._coupon=null; showPrice(); box.innerHTML=msgBox(CP_ERR[data.reason]||'الكود مش صالح.','err'); return; }
+  window._coupon={code:data.code,final:Number(data.final),discount:Number(data.discount)}; showPrice();
+  box.innerHTML=msgBox(`✅ الكود شغال. خصم ${fmtMoney(data.discount)} جنيه${data.percent?` (${data.percent}%)`:''}.`,'ok');
+}
+async function confirmBuy(){
+  if(_buying) return; _buying=true;
+  const y=document.getElementById('buyYes'), n=document.getElementById('buyNo');
+  if(y){ y.disabled=true; y.textContent='جاري الشراء...'; } if(n) n.disabled=true;
+  const { data, error } = await sb.rpc('buy_course_v2', { course: 'photoshop', p_coupon: window._coupon?window._coupon.code:null });
+  _buying=false;
+  const box=document.getElementById('buyModalMsg');
+  if(error){ if(box) box.innerHTML=msgBox('حصل خطأ، جرّب تاني. ماتخصمش منك حاجة.','err'); if(y){y.disabled=false;y.textContent='✅ أيوه، اشتري';} if(n) n.disabled=false; return; }
+  if(typeof data==='string'&&data.indexOf('coupon_')===0){ window._coupon=null; showPrice(); if(box) box.innerHTML=msgBox((CP_ERR[data.slice(7)]||'الكود مش صالح.')+' ماتخصمش منك حاجة.','err'); if(y){y.disabled=false;y.textContent='✅ أيوه، اشتري';} if(n) n.disabled=false; return; }
+  if(data==='insufficient'){
+    if(box) box.innerHTML=msgBox('رصيدك مش كفاية لشراء الكورس. شحّن رصيدك الأول من تبويب "شحن الرصيد" وبعدها ارجع اشتري.','err');
+    if(y) y.style.display='none'; if(n){ n.disabled=false; n.textContent='تمام'; }
+    const bt=document.createElement('button'); bt.className='btn'; bt.textContent='💰 روح لشحن الرصيد'; bt.onclick=()=>{closeBuy();goTab('wallet');}; if(n) n.parentNode.prepend(bt);
+    return;
+  }
+  closeBuy(); studentView='courses'; route();
+}
+/* announcements */
+async function annHtml(){ try{ const { data } = await sb.rpc('ann_list'); return (data||[]).map(a=>`<div class="card ann" id="ann-${a.id}" style="max-width:640px;margin:0 auto 14px;border:2px solid #38bdf8;position:relative"><button class="btn ghost" style="${_sty_sm};position:absolute;top:10px;left:10px" onclick="annDismiss(${a.id})">✖ إخفاء</button><h3 style="margin-bottom:6px">📢 ${h(a.title)}</h3><p style="white-space:pre-wrap">${h(a.body)}</p><p class="small" style="margin-top:6px">${new Date(a.created_at).toLocaleDateString('ar-EG')}</p></div>`).join(''); }catch(e){ return ''; } }
+async function annDismiss(id){ await sb.rpc('ann_dismiss',{p_id:id}); const e=document.getElementById('ann-'+id); if(e) e.remove(); }
+/* lecture extras: assignments + Q&A */
+function lecExtras(id){ return `<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" style="${_sty_sm}" onclick="toggleAsg(${id})">📝 الواجب</button><button class="btn ghost" style="${_sty_sm}" onclick="toggleQa(${id})">❓ أسئلة وأجوبة</button></div><div id="asg-${id}" class="hidden" style="margin-top:12px"></div><div id="qa-${id}" class="hidden" style="margin-top:12px"></div>`; }
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' ميجا':Math.max(1,Math.round(b/1024))+' كيلو';
+async function toggleAsg(id){ const el=document.getElementById('asg-'+id); if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; } el.classList.remove('hidden'); await loadAsg(id); }
+async function loadAsg(id){
+  const el=document.getElementById('asg-'+id); const { data } = await sb.from('assignments').select('*').eq('lecture_id',id).eq('student_id',window._uid).order('created_at',{ascending:false});
+  const rows=(data||[]).map(a=>`<div style="padding:10px;border-radius:12px;background:rgba(10,14,26,.6);margin-bottom:8px"><b>📎 ${h(a.file_name||'ملف')}</b> <span class="small">(${fmtSize(a.file_size||0)}) · ${new Date(a.created_at).toLocaleString('ar-EG')}</span>${a.note?`<p class="small" style="margin-top:4px">${h(a.note)}</p>`:''}${a.feedback?`<div class="msg ok" style="margin-top:8px"><b>ملاحظات أحمد:</b><br>${h(a.feedback).replace(/\n/g,'<br>')}</div>`:'<p class="small" style="margin-top:4px">⏳ في انتظار ملاحظات أحمد</p>'}</div>`).join('');
+  el.innerHTML=`<div class="card" style="margin:0"><h3 style="margin-bottom:8px">📝 واجب المحاضرة</h3><p class="small" style="margin-bottom:10px">ارفع شغلك (صورة أو PDF أو ZIP أو PSD) لحد 10 ميجا. أحمد هيراجعه ويرد عليك بملاحظاته.</p>${rows||'<p class="small">لسه ماعملتش رفع.</p>'}<div id="asgm-${id}"></div><input type="file" id="asgf-${id}" accept="image/*,.pdf,.zip,.psd" style="margin-top:10px"><textarea id="asgn-${id}" rows="2" maxlength="500" placeholder="ملاحظة لأحمد (اختياري)"></textarea><button class="btn" id="asgb-${id}" onclick="uploadAsg(${id})">⬆️ رفع الواجب</button></div>`;
+}
+async function uploadAsg(id){
+  const f=document.getElementById('asgf-'+id).files[0]; const box=document.getElementById('asgm-'+id); const btn=document.getElementById('asgb-'+id);
+  if(!f){ box.innerHTML=msgBox('اختار ملف الأول','err'); return; }
+  if(f.size>10*1048576){ box.innerHTML=msgBox('الملف أكبر من 10 ميجا. صغّره وجرّب تاني.','err'); return; }
+  if(!/\.(jpe?g|png|webp|gif|pdf|zip|psd)$/i.test(f.name)){ box.innerHTML=msgBox('النوع ده مش مسموح. المسموح: صور، PDF، ZIP، PSD.','err'); return; }
+  btn.disabled=true; btn.textContent='جاري الرفع...';
+  const safe=f.name.replace(/[^A-Za-z0-9._-]/g,'_').slice(-80); const path=`${window._uid}/${id}/${Date.now()}-${safe}`;
+  const up=await sb.storage.from('assignments').upload(path,f,{contentType:f.type||undefined});
+  if(up.error){ box.innerHTML=msgBox('الرفع فشل: '+h(up.error.message||'جرّب تاني'),'err'); btn.disabled=false; btn.textContent='⬆️ رفع الواجب'; return; }
+  const r=await sb.rpc('assignment_add',{p_lecture:id,p_path:path,p_name:f.name,p_type:f.type||'',p_size:f.size,p_note:document.getElementById('asgn-'+id).value});
+  if(r.error){ box.innerHTML=msgBox(/limit/.test(r.error.message)?'وصلت للحد الأقصى (10 ملفات للمحاضرة).':'حصل خطأ، جرّب تاني.','err'); btn.disabled=false; btn.textContent='⬆️ رفع الواجب'; return; }
+  await loadAsg(id); document.getElementById('asgm-'+id).innerHTML=msgBox('اتبعت لأحمد ✅','ok');
+}
+async function toggleQa(id){ const el=document.getElementById('qa-'+id); if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; } el.classList.remove('hidden'); await loadQa(id); }
+async function loadQa(id){
+  const el=document.getElementById('qa-'+id); const { data } = await sb.rpc('qa_list',{p_lecture:id});
+  const rows=(data||[]).map(q=>`<div style="padding:10px;border-radius:12px;background:rgba(10,14,26,.6);margin-bottom:8px"><p><b>❓ ${h(q.asker)}${q.mine?' (أنت)':''}:</b> ${h(q.question)}</p>${q.answer?`<p style="margin-top:6px;color:#86efac"><b>💬 أحمد:</b> ${h(q.answer).replace(/\n/g,'<br>')}</p>`:'<p class="small" style="margin-top:4px">⏳ في انتظار رد أحمد (السؤال ده شايفه انت بس لحد ما يتجاوب)</p>'}</div>`).join('');
+  el.innerHTML=`<div class="card" style="margin:0"><h3 style="margin-bottom:8px">❓ أسئلة وأجوبة المحاضرة</h3>${rows||'<p class="small">مفيش أسئلة لسه. كن أول واحد يسأل.</p>'}<div id="qam-${id}"></div><textarea id="qaq-${id}" rows="2" maxlength="500" placeholder="اكتب سؤالك على المحاضرة دي"></textarea><button class="btn" onclick="askQa(${id})">إرسال السؤال</button></div>`;
+}
+async function askQa(id){ const t=document.getElementById('qaq-'+id).value.trim(); const box=document.getElementById('qam-'+id); if(t.length<3){ box.innerHTML=msgBox('اكتب سؤال أطول شوية','err'); return; } const r=await sb.rpc('qa_ask',{p_lecture:id,p_q:t}); if(r.error){ box.innerHTML=msgBox(/limit/.test(r.error.message)?'عندك 5 أسئلة لسه ماتجاوبتش. استنى أحمد يرد الأول.':'حصل خطأ، جرّب تاني.','err'); return; } await loadQa(id); document.getElementById('qam-'+id).innerHTML=msgBox('اتبعت لأحمد ✅ هيوصلك إشعار لما يرد.','ok'); }
+/* certificate */
+function certCardHtml(tot,dn){ if(!tot) return ''; if(dn<tot) return `<div class="card"><h2>🎓 شهادة إتمام الكورس</h2><p class="small">الشهادة بتتفتح لما تخلّص كل المحاضرات (${dn} من ${tot}).</p></div>`; return `<div class="card" style="border:2px solid #fbbf24"><h2>🎓 مبروك! خلّصت الكورس</h2><p class="small" style="margin:6px 0 12px">استلم شهادة إتمام الكورس من أحمد وليد. (شهادة إتمام من المنصة، مش شهادة معتمدة من جهة رسمية.)</p><div id="certBox"><button class="btn" onclick="certClaim()">🎓 استلم شهادتك</button></div></div>`; }
+let _cert=null;
+async function certClaim(){ const box=document.getElementById('certBox'); box.innerHTML='<p class="small">جاري إنشاء الشهادة...</p>'; const { data, error } = await sb.rpc('certificate_claim'); if(error||!data||!data.ok){ box.innerHTML=msgBox('لسه ماخلصتش كل المحاضرات أو حصل خطأ.','err'); return; } _cert=data; await drawCert(data); box.innerHTML=`<canvas id="certCv" style="width:100%;border-radius:12px;border:1px solid rgba(251,191,36,.5)"></canvas><p class="small" style="margin-top:8px">رقم الشهادة: <b dir="ltr">${h(data.code)}</b></p><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="certDl('png')">⬇️ تحميل صورة PNG</button><button class="btn ghost" onclick="certDl('pdf')">⬇️ تحميل PDF</button></div>`; const cv=document.getElementById('certCv'); cv.width=_certCv.width; cv.height=_certCv.height; cv.getContext('2d').drawImage(_certCv,0,0); }
+let _certCv=null;
+function loadImg(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; }); }
+async function drawCert(d){
+  try{ await document.fonts.load('700 40px Cairo'); await document.fonts.load('400 24px Cairo'); }catch(e){}
+  const W=1754,H=1240; const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.direction='rtl'; x.textAlign='center';
+  let g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#0b0f1d'); g.addColorStop(.5,'#1e1b4b'); g.addColorStop(1,'#3b0764'); x.fillStyle=g; x.fillRect(0,0,W,H);
+  x.strokeStyle='#fbbf24'; x.lineWidth=8; x.strokeRect(40,40,W-80,H-80); x.lineWidth=2; x.strokeRect(62,62,W-124,H-124);
+  const logo=await loadImg('/media/logo.png'); if(logo){ const lw=260, lh=lw*logo.height/logo.width; x.globalAlpha=.07; x.drawImage(logo,W/2-450,H/2-450*logo.height/logo.width,900,900*logo.height/logo.width); x.globalAlpha=1; x.drawImage(logo,W/2-lw/2,110,lw,lh); }
+  x.fillStyle='#fbbf24'; x.font='700 84px Cairo'; x.fillText('شهادة إتمام كورس',W/2,420);
+  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('تشهد منصة Ahmed walid بأن',W/2,520);
+  x.fillStyle='#ffffff'; x.font='700 100px Cairo'; let nm=d.name||''; while(x.measureText(nm).width>W-300 && x.font.indexOf('px')>0){ const s=parseInt(x.font.match(/(\d+)px/)[1])-4; x.font='700 '+s+'px Cairo'; } x.fillText(nm,W/2,670);
+  x.strokeStyle='#a78bfa'; x.lineWidth=3; x.beginPath(); x.moveTo(W/2-420,700); x.lineTo(W/2+420,700); x.stroke();
+  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('أتمّ/ت بنجاح كل محاضرات كورس',W/2,780);
+  x.fillStyle='#f0abfc'; x.font='700 56px Cairo'; x.fillText(d.course||'',W/2,860);
+  const dt=new Date(d.date).toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
+  x.fillStyle='#cbd5e1'; x.font='400 34px Cairo'; x.fillText('بتاريخ '+dt,W/2,935);
+  x.fillStyle='#fbbf24'; x.font='700 32px Cairo'; x.direction='ltr'; x.fillText('Certificate No: '+d.code,W/2,995); x.direction='rtl';
+  x.fillStyle='#e2e8f0'; x.font='700 36px Cairo'; x.textAlign='right'; x.fillText('أحمد وليد',W-170,1080); x.font='400 26px Cairo'; x.fillStyle='#94a3b8'; x.fillText('المدرب',W-170,1115);
+  x.textAlign='center'; x.fillStyle='#94a3b8'; x.font='400 24px Cairo'; x.fillText('شهادة إتمام كورس صادرة من أحمد وليد، وليست شهادة معتمدة من جهة رسمية أو أكاديمية.',W/2,1150);
+  _certCv=c;
+}
+function certDl(kind){
+  if(!_certCv||!_cert) return; const fn='certificate-'+_cert.code;
+  if(kind==='png'){ _certCv.toBlob(b=>dlBlob(b,fn+'.png'),'image/png'); return; }
+  const b64=_certCv.toDataURL('image/jpeg',0.92).split(',')[1]; const bin=atob(b64); const u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  dlBlob(makePdf(u8,_certCv.width,_certCv.height),fn+'.pdf');
+}
+function dlBlob(b,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }
+function makePdf(jpg,w,hh){ const enc=s=>new TextEncoder().encode(s); const parts=[],offs=[]; let len=0; const add=b=>{ if(typeof b==='string') b=enc(b); parts.push(b); len+=b.length; };
+  add('%PDF-1.4\n'); offs[1]=len; add('1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'); offs[2]=len; add('2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n'); offs[3]=len; add('3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 842 595]/Resources<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>endobj\n');
+  offs[4]=len; add(`4 0 obj<</Type/XObject/Subtype/Image/Width ${w}/Height ${hh}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${jpg.length}>>stream\n`); add(jpg); add('\nendstream endobj\n');
+  const cs='q 842 0 0 595 0 0 cm /Im0 Do Q'; offs[5]=len; add(`5 0 obj<</Length ${cs.length}>>stream\n${cs}\nendstream endobj\n`);
+  const xr=len; add('xref\n0 6\n0000000000 65535 f \n'+[1,2,3,4,5].map(i=>String(offs[i]).padStart(10,'0')+' 00000 n \n').join('')); add(`trailer<</Size 6/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`); return new Blob(parts,{type:'application/pdf'}); }
+/* ===== admin extra tabs ===== */
+const fdt=t=>t?new Date(t).toLocaleString('ar-EG'):'';
+async function adminSignedOpen(path){ const w=window.open('','_blank'); const { data } = await sb.storage.from('assignments').createSignedUrl(path,300); if(data&&data.signedUrl&&w) w.location=data.signedUrl; else if(w) w.close(); }
+async function adminSendFeedback(id){ const t=document.getElementById('fb-'+id).value.trim(); if(!t) return; const r=await sb.rpc('admin_assignment_feedback',{p_id:id,p_text:t}); if(r.error){ alert('حصل خطأ'); return; } route(); }
+async function adminQaAnswer(id){ const t=document.getElementById('qa-a-'+id).value.trim(); if(!t) return; const r=await sb.rpc('admin_qa_answer',{p_id:id,p_text:t}); if(r.error){ alert('حصل خطأ'); return; } route(); }
+async function adminQaHide(id,hide){ await sb.rpc('admin_qa_hide',{p_id:id,p_hide:hide}); route(); }
+async function adminQaDel(id){ if(!confirm('حذف السؤال نهائيًا؟')) return; await sb.rpc('admin_qa_delete',{p_id:id}); route(); }
+function genCode(){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; const r=crypto.getRandomValues(new Uint8Array(7)); r.forEach(b=>s+=A[b%A.length]); document.getElementById('cpCode').value=s; }
+async function adminCouponSave(){ const code=document.getElementById('cpCode').value.trim(), pc=parseInt(document.getElementById('cpPct').value), ex=document.getElementById('cpExp').value, mx=parseInt(document.getElementById('cpMax').value)||0; const box=document.getElementById('cpAdmMsg'); if(!/^[A-Za-z0-9_-]{3,24}$/.test(code)){ box.innerHTML=msgBox('الكود حروف إنجليزي وأرقام (3 لـ 24)','err'); return; } if(!(pc>=1&&pc<=100)){ box.innerHTML=msgBox('النسبة من 1 لـ 100','err'); return; } const r=await sb.rpc('admin_coupon_save',{p_code:code,p_percent:pc,p_expires:ex?new Date(ex+'T23:59:59').toISOString():null,p_max:mx}); if(r.error){ box.innerHTML=msgBox('حصل خطأ','err'); return; } route(); }
+async function adminCouponToggle(code,on){ await sb.rpc('admin_coupon_toggle',{p_code:code,p_on:on}); route(); }
+async function adminCouponDel(code){ if(!confirm('حذف الكوبون '+code+'؟')) return; await sb.rpc('admin_coupon_delete',{p_code:code}); route(); }
+async function adminPromoOpts(){ const d=parseInt(document.getElementById('poDays').value), e=document.getElementById('poEnd').value, st=document.getElementById('poStart').value; if(!(d>=1&&d<=365)){ document.getElementById('poMsg').innerHTML=msgBox('الأيام من 1 لـ 365','err'); return; } const r=await sb.rpc('admin_promo_opts',{p_days:d,p_starts:st?new Date(st+'T00:00:00').toISOString():null,p_ends:e?new Date(e+'T23:59:59').toISOString():null}); if(r.error){ document.getElementById('poMsg').innerHTML=msgBox('حصل خطأ','err'); return; } route(); }
+async function adminPromoSet(on){ if(!on && !confirm('إنهاء العرض؟ اللينك هيبطل يعمل أكواد، وكل الأكواد اللي لسه ماتستخدمتش هتتلغي ومش هترجع حتى لو شغّلت العرض تاني. الأكواد اللي اتستخدمت بتفضل في السجل.')) return; await sb.rpc('admin_promo_set',{p_active:on}); route(); }
+function copyText(t,btn){ navigator.clipboard.writeText(t).then(()=>{ if(btn){ const o=btn.innerText; btn.innerText='✅ اتنسخ'; setTimeout(()=>btn.innerText=o,1500); } }); }
+async function adminAnnSend(){ const t=document.getElementById('annT').value.trim(), b=document.getElementById('annB').value.trim(); const box=document.getElementById('annMsg'); if(!t||!b){ box.innerHTML=msgBox('اكتب العنوان والنص','err'); return; } if(!confirm('هيوصل الإعلان لكل الطلاب. تبعت؟')) return; const r=await sb.rpc('admin_announce',{p_title:t,p_body:b}); if(r.error){ box.innerHTML=msgBox('حصل خطأ','err'); return; } route(); }
+async function adminAnnDel(id){ if(!confirm('حذف الإعلان؟')) return; await sb.rpc('admin_ann_delete',{p_id:id}); route(); }
+async function adminExtra(students,lectures){
+  const nm=id=>{ const s=(students||[]).find(x=>x.id===id); return s?s.full_name:id.slice(0,8); };
+  const ph=id=>{ const s=(students||[]).find(x=>x.id===id); return s?s.phone:''; };
+  const lt=id=>{ const l=(lectures||[]).find(x=>x.id===id); return l?l.title:id; };
+  const [A,Q,C,CU,PS,PC,AN,CE]=await Promise.all([
+    sb.from('assignments').select('*').order('created_at',{ascending:false}).limit(150),
+    sb.from('lecture_qa').select('*').order('created_at',{ascending:false}).limit(200),
+    sb.from('coupons').select('*').order('created_at',{ascending:false}),
+    sb.from('coupon_uses').select('*').order('created_at',{ascending:false}).limit(100),
+    sb.from('promo_settings').select('*').eq('id',1).maybeSingle(),
+    sb.from('promo_claims').select('*').order('created_at',{ascending:false}).limit(500),
+    sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(50),
+    sb.from('certificates').select('*').order('issued_at',{ascending:false}).limit(200)]);
+  const as=(A.data||[]).slice().sort((a,b)=>(a.feedback?1:0)-(b.feedback?1:0));
+  const imgs=as.filter(a=>/\.(jpe?g|png|webp|gif)$/i.test(a.file_path)); const urls={};
+  if(imgs.length){ const { data } = await sb.storage.from('assignments').createSignedUrls(imgs.map(a=>a.file_path),3600); (data||[]).forEach(u=>{ if(u.signedUrl) urls[u.path]=u.signedUrl; }); }
+  const asgRows=as.map(a=>`<div class="notif ${a.feedback?'':'new'}"><b>${h(nm(a.student_id))}</b> <span class="small">(${h(ph(a.student_id))})</span> · <span class="small">${h(lt(a.lecture_id))}</span> ${a.feedback?'<span class="badge active">تم الرد</span>':'<span class="badge pending">محتاج مراجعة</span>'}<p class="small" style="margin-top:6px">📎 ${h(a.file_name)} (${fmtSize(a.file_size||0)}) · ${fdt(a.created_at)}</p>${urls[a.file_path]?`<a href="${urls[a.file_path]}" target="_blank"><img src="${urls[a.file_path]}" style="max-height:160px;max-width:100%;border-radius:10px;margin-top:6px"></a>`:''}<p style="margin-top:6px"><button class="btn ghost" style="${_sty_sm}" onclick="adminSignedOpen('${h(a.file_path).replace(/'/g,'')}')">⬇️ فتح الملف</button></p>${a.note?`<p class="small" style="margin-top:6px">ملاحظة الطالب: ${h(a.note)}</p>`:''}${a.feedback?`<p style="margin-top:6px;color:#86efac">ردك: ${h(a.feedback)}</p>`:''}<textarea id="fb-${a.id}" rows="2" maxlength="1500" placeholder="${a.feedback?'عدّل ملاحظاتك':'اكتب ملاحظاتك للطالب'}" style="margin-top:8px"></textarea><button class="btn" style="${_sty_sm}" onclick="adminSendFeedback(${a.id})">إرسال الملاحظات</button></div>`).join('')||'<p class="small">مفيش واجبات مرفوعة لسه.</p>';
+  const qs=(Q.data||[]).slice().sort((a,b)=>(a.answer?1:0)-(b.answer?1:0));
+  const qaRows=qs.map(q=>`<div class="notif ${q.answer?'':'new'}"><b>${h(nm(q.student_id))}</b> · <span class="small">${h(lt(q.lecture_id))} · ${fdt(q.created_at)}</span> ${q.answer?'<span class="badge active">اتجاوب</span>':'<span class="badge pending">مستني رد</span>'}${q.hidden?' <span class="badge pending">مخفي</span>':''}<p style="margin-top:6px">❓ ${h(q.question)}</p>${q.answer?`<p style="margin-top:6px;color:#86efac">💬 ${h(q.answer)}</p>`:''}<textarea id="qa-a-${q.id}" rows="2" maxlength="1500" placeholder="${q.answer?'عدّل ردك':'اكتب ردك'}" style="margin-top:8px"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="${_sty_sm}" onclick="adminQaAnswer(${q.id})">رد</button><button class="btn ghost" style="${_sty_sm}" onclick="adminQaHide(${q.id},${!q.hidden})">${q.hidden?'👁️ إظهار':'🙈 إخفاء'}</button><button class="btn ghost" style="${_sty_sm}" onclick="adminQaDel(${q.id})">🗑️ حذف</button></div></div>`).join('')||'<p class="small">مفيش أسئلة لسه.</p>';
+  const ps=PS.data||{active:false,amount:300,token:''}; const claims=PC.data||[]; const usedSet=new Set((CU.data||[]).map(u=>u.code)); const link=location.origin+location.pathname.replace(/index\.html$/,'')+'?promo='+ps.token; const usedN=claims.filter(c=>usedSet.has(c.code)).length;
+  const cpMap={}; (C.data||[]).forEach(c=>cpMap[c.code]=c);
+  const stOf=c=>{ const k=cpMap[c.code]||{}; if(usedSet.has(c.code)) return '<span class="badge active">اتستخدم</span>'; if(!k.active) return '<span class="badge pending" style="background:rgba(239,68,68,.2);color:#fca5a5">اتلغى</span>'; if(k.expires_at&&new Date(k.expires_at)<new Date()) return '<span class="badge pending" style="background:rgba(239,68,68,.2);color:#fca5a5">انتهى</span>'; return '<span class="badge pending">لسه</span>'; };
+  const promoRows=claims.map(c=>`<tr><td>${h(nm(c.student_id))}</td><td dir="ltr">${h(c.phone)}</td><td dir="ltr">${h(c.code)}</td><td>${stOf(c)}</td><td>${fdt(c.created_at)}</td><td>${(cpMap[c.code]||{}).expires_at?fdt(cpMap[c.code].expires_at):'-'}</td></tr>`).join('');
+  const manual=(C.data||[]).filter(c=>c.source!=='promo');
+  const cpRows=manual.map(c=>`<tr><td dir="ltr"><b>${h(c.code)}</b></td><td>${c.percent}%</td><td>${c.uses}${c.max_uses?' / '+c.max_uses:''}</td><td>${c.expires_at?new Date(c.expires_at).toLocaleDateString('ar-EG'):'بدون'}</td><td>${c.active?'<span class="badge active">شغّال</span>':'<span class="badge pending">موقوف</span>'}</td><td><button class="btn ghost" style="${_sty_sm}" onclick="adminCouponToggle('${h(c.code)}',${!c.active})">${c.active?'إيقاف':'تشغيل'}</button> <button class="btn ghost" style="${_sty_sm}" onclick="adminCouponDel('${h(c.code)}')">🗑️</button></td></tr>`).join('');
+  const useRows=(CU.data||[]).map(u=>`<tr><td dir="ltr">${h(u.code)}</td><td>${h(nm(u.student_id))}</td><td>${u.percent?u.percent+'%':fmtMoney(u.fixed_amount)+' جنيه'}</td><td>-${fmtMoney(u.discount)}</td><td>${fmtMoney(u.final_price)}</td><td>${fdt(u.created_at)}</td></tr>`).join('');
+  const annRows=(AN.data||[]).map(a=>`<div class="notif"><b>${h(a.title)}</b><p style="margin-top:6px;white-space:pre-wrap">${h(a.body)}</p><p class="small" style="margin-top:6px">${fdt(a.created_at)} · <a href="#" onclick="adminAnnDel(${a.id});return false">🗑️ حذف</a></p></div>`).join('')||'<p class="small">مفيش إعلانات.</p>';
+  const ceRows=(CE.data||[]).map(c=>`<tr><td>${h(c.student_name)}</td><td dir="ltr">${h(c.code)}</td><td>${fdt(c.issued_at)}</td></tr>`).join('');
+  const cards=[
+   ['asg',`<h2>📝 واجبات الطلاب (${as.length})</h2><p class="small" style="margin:6px 0 12px">الواجبات اللي محتاجة مراجعة فوق. اكتب ملاحظاتك وهتوصل للطالب في الإشعارات.</p>${asgRows}`],
+   ['qa',`<h2>❓ أسئلة المحاضرات (${qs.length})</h2><p class="small" style="margin:6px 0 12px">السؤال اللي بتجاوبه بيظهر لباقي الطلاب على نفس المحاضرة. تقدر تخفي أو تحذف أي سؤال.</p>${qaRows}`],
+   ['coupons',`<h2>🎟️ لينك الخصم</h2><div style="margin:10px 0;padding:14px;border-radius:14px;background:${ps.active?'rgba(34,197,94,.15)':'rgba(239,68,68,.15)'};border:2px solid ${ps.active?'#22c55e':'#ef4444'}"><p style="font-size:20px"><b>${ps.active?'🟢 العرض شغّال':'🔴 العرض منتهي'}</b></p><p class="small" style="margin-top:4px">أي حد يفتح اللينك ويسجّل بياخد كود خصم عشوائي ليه لوحده بقيمة <b>${fmtMoney(ps.amount)} جنيه</b> (خصم ثابت، مرة واحدة، لكل رقم موبايل مرة). اللينك هيفضل شغّال لحد ما تدوس "إنهاء العرض". لما تنهيه: اللينك بيبطل يعمل أكواد، وكل الأكواد اللي اتعملت ولسه ماتستخدمتش بتتلغي. لو شغّلته تاني، الأكواد الملغية مش بترجع (الناس الجداد بس بياخدوا أكواد جديدة). الأكواد اللي اتستخدمت قبل كده بتفضل في السجل.</p><button class="btn ${ps.active?'ghost':''}" style="margin-top:10px" onclick="adminPromoSet(${!ps.active})">${ps.active?'⏹️ إنهاء العرض':'▶️ تشغيل العرض من جديد'}</button><div style="margin-top:14px"><div id="poMsg"></div><label class="small">مدة صلاحية كل كود بالأيام (من وقت ما الطالب بياخده)</label><input id="poDays" type="number" dir="ltr" min="1" max="365" value="${ps.code_days||15}"><label class="small">تاريخ بداية العرض (اختياري، قبله اللينك بيقول العرض لسه ماابتداش)</label><input id="poStart" type="date" dir="ltr" value="${ps.offer_starts_at?new Date(ps.offer_starts_at).toISOString().slice(0,10):''}"><label class="small">تاريخ انتهاء العرض كله (اختياري، بعده اللينك يقفل والأكواد بتنتهي)</label><input id="poEnd" type="date" dir="ltr" value="${ps.offer_ends_at?new Date(ps.offer_ends_at).toISOString().slice(0,10):''}"><button class="btn ghost" style="${_sty_sm}" onclick="adminPromoOpts()">حفظ الإعدادات</button></div></div><label>لينك الخصم (ابعته للناس)</label><div style="display:flex;gap:8px"><input readonly dir="ltr" value="${h(link)}" style="margin-bottom:0"><button class="btn ghost" style="${_sty_sm}" onclick="copyText('${h(link)}',this)">نسخ</button></div><p style="margin-top:12px"><b>اتعمل ${claims.length} كود · اتستخدم ${usedN}</b></p>${promoRows?`<div style="overflow:auto"><table><tr><th>الطالب</th><th>الموبايل</th><th>الكود</th><th>الحالة</th><th>اتعمل</th><th>ينتهي</th></tr>${promoRows}</table></div>`:'<p class="small">لسه محدش سجّل بالينك.</p>'}
+     <h2 style="margin:22px 0 8px">➕ كود خصم بنسبة مئوية</h2><div id="cpAdmMsg"></div><label>الكود</label><div style="display:flex;gap:8px"><input id="cpCode" dir="ltr" placeholder="مثلاً AHMED20" style="margin-bottom:0"><button class="btn ghost" style="${_sty_sm}" onclick="genCode()">🎲 عشوائي</button></div><label style="margin-top:12px">نسبة الخصم %</label><input id="cpPct" type="number" dir="ltr" min="1" max="100" placeholder="مثلاً 20"><label>تاريخ الانتهاء (اختياري)</label><input id="cpExp" type="date" dir="ltr"><label>أقصى عدد استخدامات (اختياري، سيبه فاضي = بلا حد)</label><input id="cpMax" type="number" dir="ltr" min="1"><button class="btn" onclick="adminCouponSave()">حفظ الكود</button>
+     ${cpRows?`<h3 style="margin:18px 0 8px">الأكواد الحالية</h3><div style="overflow:auto"><table><tr><th>الكود</th><th>الخصم</th><th>استخدام</th><th>الانتهاء</th><th>الحالة</th><th></th></tr>${cpRows}</table></div>`:''}
+     <h3 style="margin:18px 0 8px">سجل استخدام الأكواد</h3>${useRows?`<div style="overflow:auto"><table><tr><th>الكود</th><th>الطالب</th><th>الخصم</th><th>اتخصم</th><th>دفع</th><th>التاريخ</th></tr>${useRows}</table></div>`:'<p class="small">لسه محدش استخدم كود.</p>'}`],
+   ['ann',`<h2>📢 إعلانات للطلاب</h2><p class="small" style="margin:6px 0 12px">الإعلان بيظهر لكل الطلاب في الصفحة الرئيسية (وتقدر يقفلوه) وبيوصلهم إشعار في الجرس.</p><div id="annMsg"></div><label>العنوان</label><input id="annT" maxlength="120"><label>النص</label><textarea id="annB" rows="4" maxlength="1500"></textarea><button class="btn" onclick="adminAnnSend()">📢 إرسال لكل الطلاب</button><h3 style="margin:18px 0 8px">الإعلانات السابقة</h3>${annRows}`],
+   ['certs',`<h2>🎓 الشهادات اللي اتصدرت (${(CE.data||[]).length})</h2>${ceRows?`<table><tr><th>الطالب</th><th>رقم الشهادة</th><th>التاريخ</th></tr>${ceRows}</table>`:'<p class="small" style="margin-top:8px">لسه محدش خلّص الكورس.</p>'}`]];
+  cards.forEach(([t,html])=>app.insertAdjacentHTML('afterbegin',`<div class="card" data-tab="${t}">${html}</div>`));
+}
+
 route();
 </script>
 </body>
