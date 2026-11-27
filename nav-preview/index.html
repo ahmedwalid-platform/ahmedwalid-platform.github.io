@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta name="robots" content="noindex,nofollow"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126b';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta name="robots" content="noindex,nofollow"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126c';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -297,7 +297,7 @@ function courseHero(cta){
 
 function instructorCard(wide){
   return `<div class="inst${wide?' inst-wide':''}"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126b" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126c" alt="المدرب أحمد وليد">
     <div class="inst-txt"><h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -503,6 +503,7 @@ async function viewStudent(user){
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
   setMsg(`
+  <div style="text-align:left;margin-bottom:12px"><button class="btn ghost" id="backCourses" onclick="studentView='courses';window.scrollTo(0,0);route()">← رجوع للكورسات</button></div>
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
