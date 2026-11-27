@@ -142,7 +142,7 @@ header h1{display:flex;align-items:center;gap:10px}
 .sfoot .wa{background:linear-gradient(135deg,#25d366,#128c7e)}
 .sfoot .cp{margin-top:18px;font-size:12px;color:#8e97b8}
 body::before{content:"";position:fixed;left:50%;top:50%;width:min(78vw,560px);height:min(78vw,560px);transform:translate(-50%,-50%);background:url(/media/logo.png) center/contain no-repeat;opacity:.08;z-index:5;pointer-events:none}</style>
-<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/media/favicon-32.png"><link rel="apple-touch-icon" href="/media/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b0f1d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"></head>
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/media/favicon-32.png"><link rel="apple-touch-icon" href="/media/apple-touch-icon.png"><link rel="manifest" href="/nav-preview/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="أحمد وليد"><meta name="application-name" content="أحمد وليد"><meta name="theme-color" content="#0b0f1d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"></head>
 <body>
 <div id="loader"><div class="lg"><img src="/media/logo.png" alt="Ahmed walid"></div><div class="bar"><i></i></div></div>
 <header>
@@ -1027,7 +1027,24 @@ async function delLecture(id){ if(!confirm('متأكد من حذف المحاض�
 let _loaderT=0;
 function showLoader(){ const l=document.getElementById('loader'); l.classList.remove('off'); _loaderT=Date.now(); }
 function hideLoader(){ const l=document.getElementById('loader'); const w=Math.max(0,500-(Date.now()-_loaderT)); setTimeout(()=>l.classList.add('off'),w); }
-async function route(){ showLoader(); try{ return await _route(); } finally{ hideLoader(); } }
+const SW_URL = location.pathname.indexOf('/nav-preview')===0 ? '/nav-preview/sw.js' : '/sw.js';
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register(SW_URL).catch(()=>{}); }); }
+let _ip=null; window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); _ip=e; const b=document.getElementById('instBtn'); if(b) b.classList.remove('hidden'); });
+window.addEventListener('appinstalled',()=>{ const c=document.getElementById('installCard'); if(c) c.remove(); });
+function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }
+function maybeInstallHint(){
+  try{
+    if(isStandalone()||studentView!=='home'||document.getElementById('topupCard')||document.getElementById('installCard')||localStorage.getItem('instHide')) return;
+    const app=document.getElementById('app'); if(!app||!document.getElementById('tabs')) return;
+    const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    const body = ios ? '<p>على الآيفون: افتح الموقع من <b>Safari</b>، اضغط زرار المشاركة <b>⬆️</b> وبعدين <b>"إضافة إلى الشاشة الرئيسية"</b> (Add to Home Screen).</p>'
+      : '<p>على الأندرويد: اضغط الزرار ده، أو من قايمة المتصفح (⋮) اختار <b>"تثبيت التطبيق"</b>.</p><button class="btn hidden" id="instBtn" style="margin-top:8px" onclick="doInstall()">📲 ثبّت التطبيق</button>';
+    app.insertAdjacentHTML('afterbegin','<div class="card" id="installCard" style="border-color:rgba(251,191,36,.5)"><h3>📲 ثبّت المنصة كتطبيق على موبايلك</h3><p class="small" style="margin:6px 0">هتلاقي أيقونة AW على الشاشة الرئيسية وتفتح زي أي تطبيق.</p>'+body+'<button class="btn ghost" style="margin-top:8px" onclick="localStorage.setItem(\'instHide\',\'1\');this.closest(\'.card\').remove()">مش دلوقتي</button></div>');
+    if(_ip){ const b=document.getElementById('instBtn'); if(b) b.classList.remove('hidden'); }
+  }catch(e){}
+}
+async function doInstall(){ if(!_ip) return; _ip.prompt(); try{ await _ip.userChoice; }catch(e){} _ip=null; const c=document.getElementById('installCard'); if(c) c.remove(); }
+async function route(){ showLoader(); try{ return await _route(); } finally{ hideLoader(); maybeInstallHint(); } }
 async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
