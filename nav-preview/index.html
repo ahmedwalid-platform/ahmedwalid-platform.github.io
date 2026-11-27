@@ -240,7 +240,7 @@ async function viewInbox(st){
 const PRES_MS=150000;
 const isOnline = ts => ts && (Date.now()-new Date(ts).getTime()) < PRES_MS;
 function presBadge(ts,sid){ const on=isOnline(ts); return `<span class="badge pres ${on?'active':'pending'}" data-sid="${sid}" style="${on?'':'background:rgba(148,163,184,.15);color:#94a3b8;border-color:rgba(148,163,184,.35)'}">${on?'🟢 نشط':'غير نشط'}</span>`; }
-function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence'); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
+function startPresence(){ if(window._pres) return; const beat=()=>{ if(!document.hidden) sb.rpc('touch_presence').then(()=>{},()=>{}); }; beat(); window._pres=setInterval(beat,60000); document.addEventListener('visibilitychange',beat); }
 function watchPresence(){ if(window._presW) clearInterval(window._presW); window._presW=setInterval(async()=>{ const els=document.querySelectorAll('.pres[data-sid]'); if(!els.length){ clearInterval(window._presW); return; } const { data } = await sb.from('students').select('id,last_seen'); (data||[]).forEach(r=>{ const e=document.querySelector('.pres[data-sid="'+r.id+'"]'); if(e) e.outerHTML=presBadge(r.last_seen,r.id); }); },30000); }
 let curTab='home';
 const TABS_ADMIN=[['home','🏠 الرئيسية'],['students','👥 الطلاب'],['topup','💰 شحن رصيد'],['courses','🎬 الكورسات'],['addlec','➕ إضافة محاضرة'],['pay','🧾 سجل المدفوعات'],['log','📜 سجل العمليات'],['chats','💬 رسائل الطلاب'],['asg','📝 الواجبات'],['qa','❓ الأسئلة'],['coupons','🎟️ الكوبونات'],['ann','📢 الإعلانات'],['certs','🎓 الشهادات'],['quiz','📋 الامتحانات'],['staff','🧑‍💼 المساعدين'],['profile','👤 الملف الشخصي']];
