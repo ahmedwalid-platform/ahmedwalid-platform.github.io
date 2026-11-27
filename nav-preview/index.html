@@ -86,6 +86,11 @@ a{color:#f472b6;font-weight:700}
 .step p{font-size:14px;margin:0;line-height:1.8}
 @media(max-width:860px){.inst-wide .inst-in{flex-direction:column;text-align:center}.inst-wide img{width:min(230px,72%);margin:0 auto 10px}}
 @media(max-width:860px){.inst-wide .inst-in{flex-direction:column;text-align:center}}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:14px}
+.ccard{border-radius:18px;padding:16px;background:rgba(13,17,36,.88);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;gap:8px;text-align:right}
+.ccard .ci{font-size:30px}.ccard h3{font-size:17px}
+.ccard.free{border-color:rgba(52,211,153,.6)}.ccard.paid{border-color:rgba(236,72,153,.55)}
+.ccard .btn{margin-top:auto;width:100%}
 .split{display:grid;grid-template-columns:1fr 1.05fr;gap:22px;align-items:stretch}
 .inst{border-radius:20px;padding:2px;margin-top:6px;background:linear-gradient(135deg,#ec4899,#8b5cf6,#14b8a6,#f59e0b);box-shadow:0 10px 40px rgba(0,0,0,.4)}
 .inst-in{background:rgba(13,17,36,.96);border-radius:18px;padding:22px;text-align:center;display:flex;flex-direction:column;justify-content:center;height:100%}
@@ -304,6 +309,21 @@ function instructorCard(wide){
   </div></div></div>`;
 }
 
+function renderHomeCourses(list,mode,active){
+  const items=[{free:true,id:'free',title:'كورس تعريفي مجاني',price:0}].concat((list||[]).map(c=>({id:c.id,title:c.title,price:Number(c.price)})));
+  const card=c=>{
+    let btn;
+    if(c.free) btn = mode==='student' ? `<button class="btn green" onclick="enterFree()">▶ دخول الكورس المجاني</button>` : `<button class="btn green" onclick="goSignup()">▶ اعمل حساب وادخل</button>`;
+    else if(mode!=='student') btn = `<button class="btn" onclick="goSignup()">🛒 اعمل حساب واشترك</button>`;
+    else btn = active ? `<button class="btn" onclick="studentView='lectures';route()">▶ دخول الكورس</button>` : `<button class="btn" onclick="goTab('courses')">🛒 اشتري الآن</button>`;
+    const badge = c.free ? '<span class="badge active">💰 مجاني</span>' : (mode==='student'&&active ? '<span class="badge active">✅ مدفوع ومفتوح</span>' : `<span class="badge pending">💳 ${fmtMoney(c.price)} جنيه</span>`);
+    return `<div class="ccard ${c.free?'free':'paid'}"><span class="ci">${c.free?'🎁':'🎨'}</span><h3>${h(c.title)}</h3><div>${badge}</div>${btn}</div>`;
+  };
+  const first=items.slice(0,6).map(card).join(''), rest=items.slice(6).map(card).join('');
+  return `<div class="card" id="homeCourses" style="margin-top:20px"><h2>📚 الكورسات المتاحة</h2><div class="cgrid">${first}</div>${rest?`<div class="cgrid hidden" id="moreCourses">${rest}</div><div style="text-align:center;margin-top:14px"><button class="btn ghost" id="moreBtn" onclick="document.getElementById('moreCourses').classList.remove('hidden');this.remove()">اظهار المزيد</button></div>`:''}</div>`;
+}
+async function homeCoursesHtml(mode,active){ const { data } = await sb.rpc('public_courses'); return renderHomeCourses(data,mode,active); }
+function goSignup(){ viewSignup(); window.scrollTo(0,0); }
 function aboutHome(){
   const F=(i,t,d)=>`<div class="fitem"><span class="fi">${i}</span><b>${t}</b><p>${d}</p></div>`;
   return `${instructorCard(true)}
@@ -328,10 +348,11 @@ function aboutHome(){
     </div>
   </div>`;
 }
-function viewLogin(){
+async function viewLogin(){
+  const HC=await homeCoursesHtml('visitor');
   setMsg(`
   ${aboutHome()}
-  <div style="margin-top:20px">${freeCardPublic()}</div>
+  ${HC}
   ${courseHero(`<div style="margin-top:16px"><button class="btn" id="enterBtn" onclick="document.getElementById('email').focus();document.getElementById('email').scrollIntoView({behavior:'smooth',block:'center'})">▶ إنشاء حساب / دخول</button><p class="small" style="margin-top:8px">اعمل حساب مجاني وشوف الكورس التعريفي، وبعدها اشترك في الكورس الأساسي.</p></div>`)}
   <div style="max-width:560px;margin:0 auto">
     <div class="card" style="margin-top:6px">
@@ -460,7 +481,7 @@ async function viewStudent(user){
   if(studentView==='chat'){ await viewChat(st); return; }
   if(studentView==='profile'){ await viewProfile(st); app.insertAdjacentHTML('beforeend', pwCard()); return; }
   if(studentView==='free'){ viewFree(st); return; }
-  if(studentView==='home'){ setMsg(greet + aboutHome() + '<div style="margin-top:20px">'+freeCard()+'</div>'); return; }
+  if(studentView==='home'){ setMsg(greet + aboutHome() + await homeCoursesHtml('student',active)); return; }
   if(studentView==='wallet'){
     const { data: reqs } = await sb.from('unlock_requests').select('*').eq('student_id', user.id).order('created_at',{ascending:false}).limit(1);
     const pending = reqs && reqs.length && reqs[0].status === 'pending';
@@ -490,7 +511,7 @@ async function viewStudent(user){
     const cta = active
       ? `<div style="margin-top:16px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span><button class="btn" id="enterBtn" style="margin-top:12px;width:100%" onclick="studentView='lectures';route()">▶ دخول الكورس</button></div>`
       : `<div style="margin-top:16px"><p style="font-size:18px;margin-bottom:10px">💳 السعر: <b>${fmtMoney(window._course.price)} جنيه</b> <span class="small">(رصيدك: ${fmtMoney(st&&st.balance)} جنيه)</span></p><div id="buymsg"></div><button class="btn" id="buyBtn" style="width:100%" onclick="askBuy()">🛒 اشتري الآن</button></div>`;
-    setMsg(courseHero(cta));
+    setMsg(freeCard()+courseHero(cta));
     return;
   }
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
@@ -875,7 +896,7 @@ async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
   document.getElementById('whoami').innerText = s ? s.user.email : '';
-  if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); viewLogin(); return; }
+  if(!s){ renderTabs(''); document.getElementById('bell').classList.add('hidden'); await viewLogin(); return; }
   if(isAdmin(s.user)){ return viewAdmin(s.user,'main'); }
   startPresence();
   const { data: sf } = await sb.from('staff').select('user_id').eq('user_id', s.user.id).maybeSingle();
