@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126a2';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261126b';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -170,7 +170,7 @@ async function saveProfile(uid){
   studentView='home'; if(document.querySelector('#tabs.scroll')) curTab='profile'; await route();
 }
 const alog_=(a,n,r,sid)=>sb.rpc('admin_log',{p_action:a,p_name:n||'-',p_reason:r||'-',p_student:sid||null});
-async function refreshBell(){ const b=document.getElementById('bell'); if(!b) return; const { count } = await sb.from('notifications').select('id',{count:'exact',head:true}).is('read_at',null); const n=document.getElementById('bellN'); const prev=+n.innerText||0; n.innerText=count>99?'99+':count; n.classList.toggle('hidden',!count); if(count>prev && prev>=0 && window._bellInit){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); } window._bellInit=true; }
+async function refreshBell(){ const b=document.getElementById('bell'); if(!b) return; const { count } = await sb.from(window._bellTbl||'notifications').select('id',{count:'exact',head:true}).is('read_at',null); const n=document.getElementById('bellN'); const prev=+n.innerText||0; n.innerText=count>99?'99+':count; n.classList.toggle('hidden',!count); if(count>prev && prev>=0 && window._bellInit){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); } window._bellInit=true; }
 function startBell(){ const b=document.getElementById('bell'); b.classList.remove('hidden'); refreshBell(); if(!window._bellT) window._bellT=setInterval(()=>{ if(!document.hidden) refreshBell(); },30000); }
 async function viewInbox(st){
   const { data } = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
@@ -282,7 +282,7 @@ function courseHero(cta){
 
 function instructorCard(){
   return `<div class="inst"><div class="inst-in">
-    <img src="/media/instructor.jpg?v=20261126a2" alt="المدرب أحمد وليد">
+    <img src="/media/instructor.jpg?v=20261126b" alt="المدرب أحمد وليد">
     <h3>أحمد وليد</h3>
     <div class="inst-role">مدرب فوتوشوب</div>
     <p class="inst-bio">خبرة من 4 لـ 5 سنين في التدريس والتدريب، وتدريب عملي مرتبط بمتطلبات سوق العمل. بيشرح فوتوشوب للمبتدئين من الصفر: من أساسيات البرنامج والأدوات والطبقات، لحد ما تعمل أول مشروع بنفسك.</p>
@@ -414,10 +414,9 @@ async function viewStudent(user){
   const active = !!(en && en.status === 'active');
   if(!['home','free','courses','lectures','wallet','profile','inbox','chat'].includes(studentView)) studentView='home';
   if(studentView==='lectures' && !active) studentView='courses';
-  if(studentView==='courses' && active) studentView='lectures';
   renderTabs('student', TAB_OF[studentView]); ensureBot();
   const greet = `<div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">${active?'اشتراكك مفعّل ✅ ادخل على تبويب الكورسات.':'ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي من تبويب الكورسات.'}</p></div>`;
-  startBell();
+  window._bellTbl='notifications'; startBell();
   if(studentView==='inbox'){ await viewInbox(st); return; }
   if(studentView==='chat'){ await viewChat(st); return; }
   if(studentView==='profile'){ await viewProfile(st); app.insertAdjacentHTML('beforeend', pwCard()); return; }
@@ -434,12 +433,10 @@ async function viewStudent(user){
         <h3 style="margin-bottom:10px">👛 رصيد المحفظة</h3>
         <div class="paynum" id="walletBal">${fmtMoney(st&&st.balance)} جنيه</div>
         <div id="buymsg"></div>
-        <p style="margin-top:10px">سعر الكورس: <b>${COURSE_PRICE} جنيه</b></p>
-        ${active?'':`<button class="btn" style="width:100%;margin-top:10px" onclick="buyCourse()">🛒 اشتري الكورس</button>`}
         <h3 style="margin:18px 0 8px">إزاي أشحن رصيدي؟</h3>
         <p>حوّل المبلغ على <b>اتصالات كاش</b> على الرقم:</p>
         <div class="paynum">01143757857</div>
-        <p style="margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,200,60,.14);border:1px solid rgba(255,200,60,.4)">⚠️ بعد التحويل لازم تبعت للمدرب <b>اسمك</b> و<b>كودك (6 أرقام)</b>${st&&st.student_code?` : <b>${st.student_code}</b>`:''} عشان يعرف مين اللي حوّل ويشحنلك رصيدك. ابعتهم من تبويب "المدرب" أو على الرقم اللي فوق.</p><p class="small">بعد ما يتشحن رصيدك دوس "اشتري الكورس".</p>
+        <p style="margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,200,60,.14);border:1px solid rgba(255,200,60,.4)">⚠️ بعد التحويل لازم تبعت للمدرب <b>اسمك</b> و<b>كودك (6 أرقام)</b>${st&&st.student_code?` : <b>${st.student_code}</b>`:''} عشان يعرف مين اللي حوّل ويشحنلك رصيدك. ابعتهم من تبويب "المدرب" أو على الرقم اللي فوق.</p><p class="small">بعد ما رصيدك يتشحن، روح تبويب "الكورسات" واشتري الكورس من هناك.</p>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
           <a class="btn wa" target="_blank" href="https://wa.me/201143757857?text=${encodeURIComponent('أنا '+(st?st.full_name:'')+'، كودي: '+(st&&st.student_code?st.student_code:'')+'. حولت فلوس على اتصالات كاش عشان أشحن رصيدي.')}">ابعت لأحمد على واتساب</a>
           <button class="btn ghost" onclick="requestUnlock()" ${pending?'disabled':''}>📩 بلّغ أحمد إني حولت</button>
@@ -448,8 +445,13 @@ async function viewStudent(user){
     </div>`);
     return;
   }
-  if(!active){
-    setMsg(`${courseHero(`<div style="margin-top:16px"><button class="btn ghost" id="enterBtn" disabled>🔒 دخول الكورس الأساسي (بعد الشراء)</button><p class="small" style="margin-top:8px">اشحن رصيدك من تبويب "شحن الرصيد" واشتري الكورس، وهيتفتحلك على طول.</p><button class="btn" style="margin-top:10px" onclick="goTab('wallet')">💰 روح لشحن الرصيد</button></div>`)}`);
+  if(studentView==='courses'){
+    const { data: cr } = await sb.from('courses').select('id,title,price').eq('id','photoshop').single();
+    window._course = { id:'photoshop', title:(cr&&cr.title)||'دورة أساسيات الفوتوشوب من الصفر', price:Number(cr&&cr.price!=null?cr.price:COURSE_PRICE) };
+    const cta = active
+      ? `<div style="margin-top:16px"><span class="badge active" style="font-size:15px">✅ مدفوع ومفتوح</span><button class="btn" id="enterBtn" style="margin-top:12px;width:100%" onclick="studentView='lectures';route()">▶ دخول الكورس</button></div>`
+      : `<div style="margin-top:16px"><p style="font-size:18px;margin-bottom:10px">💳 السعر: <b>${fmtMoney(window._course.price)} جنيه</b> <span class="small">(رصيدك: ${fmtMoney(st&&st.balance)} جنيه)</span></p><div id="buymsg"></div><button class="btn" id="buyBtn" style="width:100%" onclick="askBuy()">🛒 اشتري الآن</button></div>`;
+    setMsg(courseHero(cta));
     return;
   }
   const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
@@ -502,12 +504,30 @@ async function switchServer(id, n){
 const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
 function fmtMoney(n){ n=Number(n||0); return Number.isInteger(n)?String(n):n.toFixed(2); }
-async function buyCourse(){
-  if(!confirm('هتشتري الكورس بـ '+COURSE_PRICE+' جنيه من رصيدك. متأكد؟')) return;
+let _buying=false;
+function askBuy(){
+  const c=window._course||{title:'الكورس',price:COURSE_PRICE};
+  const ov=document.createElement('div'); ov.id='buyModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
+  document.body.appendChild(ov);
+}
+function closeBuy(){ const o=document.getElementById('buyModal'); if(o) o.remove(); }
+async function confirmBuy(){
+  if(_buying) return; _buying=true;
+  const y=document.getElementById('buyYes'), n=document.getElementById('buyNo');
+  if(y){ y.disabled=true; y.textContent='جاري الشراء...'; } if(n) n.disabled=true;
   const { data, error } = await sb.rpc('buy_course', { course: 'photoshop' });
-  if(error){ m('buymsg', msgBox('حصل خطأ، جرّب تاني','err')); return; }
-  if(data==='insufficient'){ m('buymsg', msgBox('رصيدك مش كفاية. شحّن رصيدك الأول وابعت لأحمد على واتساب.','err')); return; }
-  studentView='lectures'; route();
+  _buying=false;
+  const box=document.getElementById('buyModalMsg');
+  if(error){ if(box) box.innerHTML=msgBox('حصل خطأ، جرّب تاني. ماتخصمش منك حاجة.','err'); if(y){y.disabled=false;y.textContent='✅ أيوه، اشتري';} if(n) n.disabled=false; return; }
+  if(data==='insufficient'){
+    if(box) box.innerHTML=msgBox('رصيدك مش كفاية لشراء الكورس. شحّن رصيدك الأول من تبويب "شحن الرصيد" وبعدها ارجع اشتري.','err');
+    if(y) y.style.display='none'; if(n){ n.disabled=false; n.textContent='تمام'; }
+    const bt=document.createElement('button'); bt.className='btn'; bt.textContent='💰 روح لشحن الرصيد'; bt.onclick=()=>{closeBuy();goTab('wallet');}; if(n) n.parentNode.prepend(bt);
+    return;
+  }
+  closeBuy(); studentView='courses'; route();
 }
 let _students=[];
 function codeLookup(){
@@ -563,8 +583,10 @@ async function viewAdmin(user, role){
   const { data: staffRows } = await sb.from('staff').select('*');
   const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(300);
   const { data: wtx } = await sb.from('wallet_transactions').select('*').order('created_at',{ascending:false}).limit(30);
+  const { data: anotifs } = await sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100);
   const { data: resets } = await sb.from('password_reset_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   _students = students||[];
+  window._bellTbl='admin_notifications'; startBell();
   const nameOf = id => { const s=(students||[]).find(x=>x.id===id); return s ? s.full_name : id.slice(0,8); };
   const reqRows = (reqs||[]).map(r=>`<tr>
     <td>${h(r.sender_name || nameOf(r.student_id))}</td>
@@ -699,6 +721,10 @@ async function viewAdmin(user, role){
     <label>العنوان</label><input id="paddr" value="${h(me.address||'')}">
     <div style="margin-top:16px"><button class="btn" onclick="saveProfile('${me.id}')">💾 حفظ</button></div>` : '';
     app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p>${form}</div>`); }
+  { const AK={register:'🆕',purchase:'🛒',topup:'💰',adjust:'✏️',transfer_report:'📩',chat:'💬',reset:'🔑'};
+    const L=(anotifs||[]).map(n=>`<div class="notif ${n.read_at?'':'new'}"><b>${h(n.title)}</b>${n.read_at?'':' <span class="badge active">جديد</span>'}<p style="margin-top:6px">${h(n.body)}</p><p class="small" style="margin-top:6px">${new Date(n.created_at).toLocaleString('ar-EG')}${n.student_id?` · <a href="#" onclick="adminProfile('${n.student_id}');return false">فتح ملف الطالب</a>`:''}</p></div>`).join('') || '<p class="small" style="margin-top:12px">مفيش إشعارات لسه. أي حاجة تحصل على المنصة هتظهر هنا.</p>';
+    app.insertAdjacentHTML('afterbegin',`<div class="card" data-tab="inbox"><h2>🔔 إشعارات المنصة</h2><p class="small" style="margin:6px 0 10px">تسجيل جديد، شراء، شحن، بلاغ تحويل، رسائل الطلاب، طلبات نسيت كلمة السر.</p>${L}</div>`);
+    if(curTab==='inbox' && (anotifs||[]).some(n=>!n.read_at)){ sb.rpc('admin_notifs_read').then(()=>{ const nn=document.getElementById('bellN'); if(nn){ nn.innerText='0'; nn.classList.add('hidden'); } }); } }
   app.insertAdjacentHTML('afterbegin','<div class="card" data-tab="chats"><h2>💬 رسائل الطلاب</h2><div id="chatsBody" style="margin-top:12px"><p class="small">جارِ التحميل...</p></div></div>');
   renderTabs('admin', curTab); watchPresence(); adminChats(); if(window._aChT) clearInterval(window._aChT); window._aChT=setInterval(()=>{ const b=document.getElementById('chatsBody'); if(!b){ clearInterval(window._aChT); return; } if(!document.hidden && curTab==='chats' && !(document.getElementById('aIn')&&document.getElementById('aIn').value)) adminChats(); },10000);
   const RULES=[[/رسائل الطلاب/,'chats'],[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
