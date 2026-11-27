@@ -527,9 +527,7 @@ function freeCardPublic(){
 function enterFree(){ studentView='free'; window.scrollTo(0,0); route(); }
 async function playFree(boxId){
   const box = document.getElementById(boxId);
-  const { data: s, error } = await sb.storage.from('free-course').createSignedUrl('intro.mp4', 3600);
-  if(error || !s){ box.innerHTML = msgBox('حصلت مشكلة في تحميل الفيديو، جرّب تاني.','err'); box.classList.remove('hidden'); return; }
-  box.innerHTML = `<video id="freeVideo" controls preload="metadata" playsinline src="${h(s.signedUrl)}"></video>`;
+  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/5MhUDCAjgEw?rel=0&modestbranding=1&playsinline=1" title="فيديو تعريفي" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   box.classList.remove('hidden');
 }
 function viewFree(st){
