@@ -1160,17 +1160,17 @@ async function drawCert(d){
   let g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#0b0f1d'); g.addColorStop(.5,'#1e1b4b'); g.addColorStop(1,'#3b0764'); x.fillStyle=g; x.fillRect(0,0,W,H);
   x.strokeStyle='#fbbf24'; x.lineWidth=8; x.strokeRect(40,40,W-80,H-80); x.lineWidth=2; x.strokeRect(62,62,W-124,H-124);
   const logo=await loadImg('/media/logo.png'); if(logo){ const lw=260, lh=lw*logo.height/logo.width; x.globalAlpha=.07; x.drawImage(logo,W/2-450,H/2-450*logo.height/logo.width,900,900*logo.height/logo.width); x.globalAlpha=1; x.drawImage(logo,W/2-lw/2,110,lw,lh); }
-  x.fillStyle='#fbbf24'; x.font='700 84px Cairo'; x.fillText('شهادة إتمام كورس',W/2,470);
-  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('تشهد منصة Ahmed walid بأن',W/2,570);
-  x.fillStyle='#ffffff'; x.font='700 100px Cairo'; let nm=d.name||''; while(x.measureText(nm).width>W-300 && x.font.indexOf('px')>0){ const s=parseInt(x.font.match(/(\d+)px/)[1])-4; x.font='700 '+s+'px Cairo'; } x.fillText(nm,W/2,720);
-  x.strokeStyle='#a78bfa'; x.lineWidth=3; x.beginPath(); x.moveTo(W/2-420,750); x.lineTo(W/2+420,750); x.stroke();
-  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('أتمّ/ت بنجاح كل محاضرات كورس',W/2,830);
-  x.fillStyle='#f0abfc'; x.font='700 56px Cairo'; x.fillText(d.course||'',W/2,910);
+  x.fillStyle='#fbbf24'; x.font='700 84px Cairo'; x.fillText('شهادة إتمام كورس',W/2,420);
+  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('تشهد منصة Ahmed walid بأن',W/2,520);
+  x.fillStyle='#ffffff'; x.font='700 100px Cairo'; let nm=d.name||''; while(x.measureText(nm).width>W-300 && x.font.indexOf('px')>0){ const s=parseInt(x.font.match(/(\d+)px/)[1])-4; x.font='700 '+s+'px Cairo'; } x.fillText(nm,W/2,670);
+  x.strokeStyle='#a78bfa'; x.lineWidth=3; x.beginPath(); x.moveTo(W/2-420,700); x.lineTo(W/2+420,700); x.stroke();
+  x.fillStyle='#e2e8f0'; x.font='400 40px Cairo'; x.fillText('أتمّ/ت بنجاح كل محاضرات كورس',W/2,780);
+  x.fillStyle='#f0abfc'; x.font='700 56px Cairo'; x.fillText(d.course||'',W/2,860);
   const dt=new Date(d.date).toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
-  x.fillStyle='#cbd5e1'; x.font='400 34px Cairo'; x.fillText('بتاريخ '+dt,W/2,985);
-  x.fillStyle='#fbbf24'; x.font='700 32px Cairo'; x.direction='ltr'; x.fillText('Certificate No: '+d.code,W/2,1050); x.direction='rtl';
-  x.fillStyle='#e2e8f0'; x.font='700 36px Cairo'; x.textAlign='right'; x.fillText('أحمد وليد',W-170,1130); x.font='400 26px Cairo'; x.fillStyle='#94a3b8'; x.fillText('المدرب',W-170,1165);
-  x.textAlign='center'; x.fillStyle='#94a3b8'; x.font='400 24px Cairo'; x.fillText('شهادة إتمام كورس صادرة من أحمد وليد، وليست شهادة معتمدة من جهة رسمية أو أكاديمية.',W/2,1195);
+  x.fillStyle='#cbd5e1'; x.font='400 34px Cairo'; x.fillText('بتاريخ '+dt,W/2,935);
+  x.fillStyle='#fbbf24'; x.font='700 32px Cairo'; x.direction='ltr'; x.fillText('Certificate No: '+d.code,W/2,995); x.direction='rtl';
+  x.fillStyle='#e2e8f0'; x.font='700 36px Cairo'; x.textAlign='right'; x.fillText('أحمد وليد',W-170,1080); x.font='400 26px Cairo'; x.fillStyle='#94a3b8'; x.fillText('المدرب',W-170,1115);
+  x.textAlign='center'; x.fillStyle='#94a3b8'; x.font='400 24px Cairo'; x.fillText('شهادة إتمام كورس صادرة من أحمد وليد، وليست شهادة معتمدة من جهة رسمية أو أكاديمية.',W/2,1150);
   _certCv=c;
 }
 function certDl(kind){
