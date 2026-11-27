@@ -877,6 +877,7 @@ async function viewAdmin(user, role){
     <h3 style="margin:14px 0 6px">سيرفر 2 (اختياري، نسخة تانية من نفس الفيديو)</h3>
     <label>ارفع ملف الفيديو للسيرفر 2 (mp4، لحد 50 ميجا)</label><input id="lfile2" type="file" accept="video/mp4,video/*">
     <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج / جوجل درايف / mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
+    <label>مدة الفيديو بالدقايق (مهم لقفل المحاضرات، بيتحسب لوحده لو رفعت ملف)</label><input id="ldur" type="number" dir="ltr" step="0.1" placeholder="مثلاً 45">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -998,7 +999,10 @@ async function addLecture(){
   m('m', msgBox('جاري الرفع... متقفلش الصفحة','info'));
   const s1 = await uploadOrLink('lfile','lurl','s1'); if(s1.err){ m('m', msgBox(s1.err,'err')); return; }
   const s2 = await uploadOrLink('lfile2','lurl2','s2'); if(s2.err){ m('m', msgBox(s2.err,'err')); return; }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0 });
+  let durSec = Math.round(parseFloat(v('ldur')||'0')*60)||null;
+  const f1=document.getElementById('lfile').files[0];
+  if(!durSec && f1){ durSec = await new Promise(r=>{ const vv=document.createElement('video'); vv.preload='metadata'; vv.onloadedmetadata=()=>r(Math.round(vv.duration)||null); vv.onerror=()=>r(null); vv.src=URL.createObjectURL(f1); setTimeout(()=>r(null),8000); }); }
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await alog_('إضافة محاضرة','-',t);
   route();
