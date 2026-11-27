@@ -587,9 +587,10 @@ async function viewStudent(user){
   let list = (lectures||[]).map((l,i)=>`
     <div class="lecture ${l.done?'done':(l.unlocked?'':'locked')}" id="lec-${l.id}">
       <h3>${l.done?'✅':(l.unlocked?'▶️':'🔒')} ${i+1}. ${h(l.title)}</h3>
-      ${l.unlocked?`<p class="small">${h(l.description||'')}</p>`:'<p class="small">مقفولة. خلّص المحاضرة اللي قبلها لحد آخرها وهتتفتح لوحدها.</p>'}
+      ${l.unlocked?`<p class="small">${h(l.description||'')}</p>${l.max_views>0?`<p class="small" style="margin-top:6px">👁️ المشاهدات المتبقية: <b id="vl-${l.id}">${Math.max(0,l.max_views-l.views)}</b> من ${l.max_views}</p>`:''}`:'<p class="small">مقفولة. خلّص المحاضرة اللي قبلها لحد آخرها وهتتفتح لوحدها.</p>'}
       ${l.done?'<span class="badge active">تمت المشاهدة ✅</span>':''}
-      ${l.unlocked?`<button class="btn ${l.done?'ghost':''}" style="margin-top:12px" onclick="playLecture(${l.id})">${l.done?'🔁 إعادة المشاهدة':'▶ مشاهدة الفيديو'}</button>
+      ${l.unlocked&&l.max_views>0&&l.views>=l.max_views?'<div class="msg err">🚫 خلصت مرات مشاهدة المحاضرة دي ('+l.max_views+' من '+l.max_views+'). لو محتاج مرات زيادة كلّم أحمد على واتساب.</div>':''}
+      ${l.unlocked&&!(l.max_views>0&&l.views>=l.max_views)?`<button class="btn ${l.done?'ghost':''}" style="margin-top:12px" onclick="playLecture(${l.id})">${l.done?'🔁 إعادة المشاهدة':'▶ مشاهدة الفيديو'}</button>
       <div class="video-box hidden" id="vid-${l.id}"></div>`:''}
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
@@ -625,7 +626,8 @@ async function playLecture(id){
 }
 let _ytP;
 function loadYT(){ return _ytP||(_ytP=new Promise(r=>{ if(window.YT&&YT.Player) return r(); const t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; window.onYouTubeIframeAPIReady=()=>r(); document.head.appendChild(t); })); }
-const _lecTracked = {};
+const _lecTracked = {}; const _sess = {}; const _cnt = {};
+async function countView(id, dur){ if(_cnt[id]||!_sess[id]) return; _cnt[id]=true; const { error } = await sb.rpc('lecture_half',{ p_session:_sess[id], p_dur:Math.round(dur||0) }); if(error){ _cnt[id]=false; return; } const e=document.getElementById('vl-'+id); if(e){ e.textContent=Math.max(0,parseInt(e.textContent||'0')-1); } }
 function wrapWM(id, box){
   const el=box.querySelector('video')||box.querySelector('iframe'); if(!el||el.parentNode.classList.contains('vwrap')) return;
   if(el.tagName==='IFRAME'){ el.removeAttribute('allowfullscreen'); }
@@ -652,17 +654,18 @@ async function attachTrack(id, box){
   if(_lecTracked[id]==='on') return;
   const v=box.querySelector('video'), f=box.querySelector('iframe');
   if(!v && !f) return;
-  await sb.rpc('lecture_start', { p_id:id });
-  _lecTracked[id]='on';
+  const pl = await sb.rpc('lecture_play', { p_id:id });
+  if(pl.error){ box.insertAdjacentHTML('afterbegin', msgBox(/limit/.test(pl.error.message)?'خلصت مرات مشاهدة المحاضرة دي. كلّم أحمد لو محتاج مرات زيادة.':'مش قادر أفتح المحاضرة دلوقتي.','err')); const vv=box.querySelector('video'); if(vv) vv.remove(); const ff=box.querySelector('iframe'); if(ff) ff.remove(); return; }
+  _sess[id]=pl.data; _lecTracked[id]='on';
   if(v){
     let max=0;
-    v.addEventListener('timeupdate',()=>{ if(!v.seeking && v.currentTime>max && v.currentTime-max<2.5) max=v.currentTime; });
+    v.addEventListener('timeupdate',()=>{ if(!v.seeking && v.currentTime>max && v.currentTime-max<2.5) max=v.currentTime; if(v.duration && max>=v.duration*0.5) countView(id, v.duration); });
     v.addEventListener('seeking',()=>{ if(v.currentTime>max+1.5) v.currentTime=max; });
     v.addEventListener('ended',()=>lecDone(id, v.duration));
   } else if(/youtube\.com\/embed/.test(f.src)){
     await loadYT(); let max=0;
     const p=new YT.Player(f,{events:{onStateChange:e=>{ if(e.data===0) lecDone(id, p.getDuration()); }}});
-    setInterval(()=>{ try{ const t=p.getCurrentTime(); if(t>max && t-max<3) max=t; else if(t>max+3) p.seekTo(max,true); }catch(e){} },500);
+    setInterval(()=>{ try{ const t=p.getCurrentTime(); if(t>max && t-max<3) max=t; else if(t>max+3) p.seekTo(max,true); const dd=p.getDuration(); if(dd && max>=dd*0.5) countView(id, dd); }catch(e){} },500);
   } else {
     box.insertAdjacentHTML('beforeend','<button class="btn green" style="margin-top:10px;width:100%" onclick="lecDone('+id+',0)">✅ خلصت المحاضرة</button>');
   }
@@ -677,7 +680,7 @@ async function switchServer(id, n){
       <button class="btn ${n===2?'':'ghost'}" onclick="switchServer(${id},2)">سيرفر 2</button>
       <span class="small" style="align-self:center">لو الفيديو بطيء أو مش بيشتغل جرّب السيرفر التاني.</span></div>` : '';
   box.innerHTML = btns + (html || msgBox('حصلت مشكلة في تحميل الفيديو، جرّب السيرفر التاني أو حاول بعد شوية.','err'));
-  if(html){ _lecTracked[id]=''; if(window._trackOn&&window._trackOn[id]) wrapWM(id, box); attachTrack(id, box).catch(()=>{}); }
+  if(html){ _lecTracked[id]=''; _cnt[id]=false; if(window._trackOn&&window._trackOn[id]) wrapWM(id, box); attachTrack(id, box).catch(()=>{}); }
 }
 const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
@@ -713,6 +716,14 @@ function codeLookup(){
   const st=_students.find(x=>x.student_code===c);
   document.getElementById('tname').innerHTML = !c ? '' : st ? `<span class="badge active">✅ ${h(st.full_name)} (رصيده الحالي ${fmtMoney(st.balance)})</span>` : '<span class="badge pending">مفيش طالب بالكود ده</span>';
 }
+async function adminSetViews(sid,lid,used){ used=Math.max(0,parseInt(used)); if(isNaN(used)) return; const { error } = await sb.rpc('admin_set_views',{ p_sid:sid, p_lid:lid, p_used:used }); if(error){ alert('حصلت مشكلة'); return; } await loadLProg(sid); }
+async function adminRemainSet(sid,lid,max){ const el=document.getElementById('rem-'+lid); const rem=parseInt(el.value); if(isNaN(rem)||rem<0||rem>max){ alert('اكتب رقم من 0 لـ '+max); return; } await adminSetViews(sid,lid,max-rem); }
+async function loadLProg(sid){
+  const box=document.getElementById('lprog'); if(!box) return;
+  const { data } = await sb.rpc('admin_lecture_progress',{ p_sid:sid });
+  if(!data||!data.length){ box.innerHTML=''; return; }
+  box.innerHTML='<h3 style="margin-bottom:8px">🎓 تقدم الطالب ومرات المشاهدة</h3><div style="overflow-x:auto"><table><tr><th>المحاضرة</th><th>الحالة</th><th>المتبقي</th><th>تعديل</th></tr>'+data.map(r=>{ const lim=r.max_views>0; const rem=lim?Math.max(0,r.max_views-r.views):''; return '<tr><td>'+h(r.title)+'</td><td>'+(r.done?'✅ خلصت':'—')+'</td><td>'+(lim?'<b>'+rem+'</b> من '+r.max_views+' (استخدم '+r.views+')':'بلا حد')+'</td><td style="white-space:nowrap">'+(lim?'<input id="rem-'+r.lecture_id+'" type="number" dir="ltr" min="0" max="'+r.max_views+'" value="'+rem+'" style="width:70px;display:inline-block;margin:0"> <button class="btn" onclick="adminRemainSet(\''+sid+'\','+r.lecture_id+','+r.max_views+')">حفظ</button> <button class="btn ghost" onclick="adminSetViews(\''+sid+'\','+r.lecture_id+',0)">تصفير (رجّع '+r.max_views+')</button> <button class="btn ghost" onclick="adminSetViews(\''+sid+'\','+r.lecture_id+','+Math.max(0,r.views-1)+')">+1</button>':'—')+'</td></tr>'; }).join('')+'</table></div>';
+}
 async function adminProfile(sid){
   const { data: st } = await sb.from('students').select('*, enrollments(status)').eq('id', sid).single();
   if(!st){ alert('الطالب مش موجود'); return; }
@@ -723,8 +734,10 @@ async function adminProfile(sid){
     <h2>👤 ملف الطالب</h2>
     <div style="text-align:center;margin:14px 0">${url?`<img src="${url}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa">`:'<div style="font-size:64px">🙂</div>'}</div>
     <table>${row('الاسم',st.full_name)}${row('الكود',st.student_code)}${row('الإيميل',st.email)}${row('السن',st.age)}${row('موبايل الطالب',st.phone)}${row('موبايل ولي الأمر',st.guardian_phone)}${row('المحافظة',st.governorate)}${row('العنوان',st.address)}${row('الرصيد',fmtMoney(st.balance)+' جنيه')}${row('الحالة',act?'مفعّل':'منتظر')}</table>
+    <div id="lprog" style="margin-top:16px"></div>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" onclick="route()">← رجوع للوحة</button>${st.phone?`<a class="btn wa" target="_blank" href="https://wa.me/2${h(st.phone)}">واتساب الطالب</a>`:''}</div>
   </div>`);
+  loadLProg(sid);
 }
 function searchStudents(){
   const q=document.getElementById('sq').value.trim().toLowerCase(); const qn=normPhone(q);
@@ -894,6 +907,7 @@ async function viewAdmin(user, role){
     <label>ارفع ملف الفيديو للسيرفر 2 (mp4، لحد 50 ميجا)</label><input id="lfile2" type="file" accept="video/mp4,video/*">
     <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج / جوجل درايف / mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
     <label>مدة الفيديو بالدقايق (مهم لقفل المحاضرات، بيتحسب لوحده لو رفعت ملف)</label><input id="ldur" type="number" dir="ltr" step="0.1" placeholder="مثلاً 45">
+    <label>عدد مرات المشاهدة المسموحة لكل طالب (0 = بلا حد)</label><input id="lmaxv" type="number" dir="ltr" min="0" value="5">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -1018,7 +1032,7 @@ async function addLecture(){
   let durSec = Math.round(parseFloat(v('ldur')||'0')*60)||null;
   const f1=document.getElementById('lfile').files[0];
   if(!durSec && f1){ durSec = await new Promise(r=>{ const vv=document.createElement('video'); vv.preload='metadata'; vv.onloadedmetadata=()=>r(Math.round(vv.duration)||null); vv.onerror=()=>r(null); vv.src=URL.createObjectURL(f1); setTimeout(()=>r(null),8000); }); }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec });
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await alog_('إضافة محاضرة','-',t);
   route();
