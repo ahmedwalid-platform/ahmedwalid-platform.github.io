@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){try{var P=new URLSearchParams(location.search).get('promo');if(P)localStorage.setItem('aw_promo',P.slice(0,40))}catch(e){}var B='20261127x';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){try{var P=new URLSearchParams(location.search).get('promo');if(P)localStorage.setItem('aw_promo',P.slice(0,40))}catch(e){}var B='20261127y';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -716,6 +716,15 @@ function codeLookup(){
 }
 async function adminSetViews(sid,lid,used){ used=Math.max(0,parseInt(used)); if(isNaN(used)) return; const { error } = await sb.rpc('admin_set_views',{ p_sid:sid, p_lid:lid, p_used:used }); if(error){ alert('حصلت مشكلة'); return; } await loadLProg(sid); }
 async function adminRemainSet(sid,lid,max){ const el=document.getElementById('rem-'+lid); const rem=parseInt(el.value); if(isNaN(rem)||rem<0||rem>max){ alert('اكتب رقم من 0 لـ '+max); return; } await adminSetViews(sid,lid,max-rem); }
+async function loadStudentLog(sid){
+  const box=document.getElementById('slog'); if(!box) return;
+  const { data, error } = await sb.rpc('admin_student_log',{ p_sid:sid });
+  if(error||!data){ box.innerHTML=''; return; }
+  const fd=t=>t?h(new Date(t).toLocaleString('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'})):'—';
+  const ico={lecture_start:'▶️ دخل محاضرة',lecture_done:'✅ خلّص محاضرة',quiz:'📝 امتحان',enrolled:'🔓 اتفعّل له كورس'};
+  const rows=(data.events||[]).map(e=>{ let d=h(e.title||''); if(e.kind==='quiz') d+=' — الدرجة '+e.score+'% '+(e.passed?'<span class="badge active">نجح</span>':'<span class="badge pending">لسه</span>'); return '<tr><td>'+fd(e.at)+'</td><td>'+(ico[e.kind]||'')+'</td><td>'+d+'</td></tr>'; }).join('');
+  box.innerHTML='<h3 style="margin-bottom:8px">🕘 سجل نشاط الطالب</h3><p class="small" style="margin:4px 0 10px">تاريخ التسجيل: <b>'+fd(data.joined)+'</b> • آخر ظهور: <b>'+fd(data.last_seen)+'</b></p>'+(rows?'<div style="overflow-x:auto"><table><tr><th>الوقت</th><th>الحدث</th><th>التفاصيل</th></tr>'+rows+'</table></div>':'<p class="small">مفيش نشاط على المحاضرات أو الامتحانات لسه.</p>');
+}
 async function loadLProg(sid){
   const box=document.getElementById('lprog'); if(!box) return;
   const { data } = await sb.rpc('admin_lecture_progress',{ p_sid:sid });
@@ -733,9 +742,10 @@ async function adminProfile(sid){
     <div style="text-align:center;margin:14px 0">${url?`<img src="${url}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa">`:'<div style="font-size:64px">🙂</div>'}</div>
     <table>${row('الاسم',st.full_name)}${row('الكود',st.student_code)}${row('الإيميل',st.email)}${row('السن',st.age)}${row('موبايل الطالب',st.phone)}${row('موبايل ولي الأمر',st.guardian_phone)}${row('المحافظة',st.governorate)}${row('العنوان',st.address)}${row('الرصيد',fmtMoney(st.balance)+' جنيه')}${row('الحالة',act?'مفعّل':'منتظر')}</table>
     <div id="lprog" style="margin-top:16px"></div>
+    <div id="slog" style="margin-top:16px"></div>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" onclick="route()">← رجوع للوحة</button>${st.phone?`<a class="btn wa" target="_blank" href="https://wa.me/2${h(st.phone)}">واتساب الطالب</a>`:''}</div>
   </div>`);
-  loadLProg(sid);
+  loadLProg(sid); loadStudentLog(sid);
 }
 function searchStudents(){
   const q=document.getElementById('sq').value.trim().toLowerCase(); const qn=normPhone(q);
@@ -1245,7 +1255,7 @@ async function adminQaDel(id){ if(!confirm('حذف السؤال نهائيًا؟
 
 function _cairoLocal(iso){ if(!iso) return ''; const d=new Date(iso); const p=new Intl.DateTimeFormat('sv-SE',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d); return p.replace(' ','T'); }
 async function adminPricesLoad(){ const box=document.getElementById('prBox'); if(!box) return; const r=await sb.rpc('admin_price_get'); if(r.error){ box.innerHTML=msgBox('مقدرتش أحمّل الأسعار.','err'); return; }
-  box.innerHTML=(r.data||[]).map((c,i)=>`<div class="card" style="margin:10px 0;background:rgba(255,255,255,.04)"><h3>${h(c.title)}</h3><p style="margin:6px 0">${c.running?'<span class="badge active">🔥 العرض شغال دلوقتي</span>':'<span class="badge pending">مفيش عرض شغال</span>'} السعر الحالي للطالب: <b>${fmtMoney(c.running?c.sale_price:c.price)} جنيه</b></p><label>السعر العادي (جنيه)</label><input id="prP${i}" type="number" dir="ltr" min="1" step="any" value="${c.price}"><label>سعر العرض (جنيه، لازم أقل من السعر العادي)</label><input id="prS${i}" type="number" dir="ltr" min="1" step="any" value="${c.sale_price!=null?c.sale_price:''}" placeholder="مثلاً 900"><label>العرض بينتهي (اختياري، بتوقيت القاهرة)</label><input id="prE${i}" type="datetime-local" dir="ltr" value="${_cairoLocal(c.sale_ends_at)}"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="prA${i}" type="checkbox" style="width:auto;margin:0" ${c.sale_active?'checked':''}> تشغيل العرض</label><button class="btn" onclick="adminPriceSave('${h(c.id)}',${i})">💾 حفظ</button></div>`).join(''); }
+  box.innerHTML=(r.data||[]).map((c,i)=>`<div class="card" style="margin:10px 0;background:rgba(255,255,255,.04)"><h3>${h(c.title)}</h3><p style="margin:6px 0">${c.running?'<span class="badge active">🔥 العرض شغال دلوقتي'+(c.sale_ends_at?' (بينتهي أوتوماتيك '+h(new Date(c.sale_ends_at).toLocaleString('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'}))+')':'')+'</span>':c.scheduled?'<span class="badge pending">⏳ العرض متجدول، هيبدأ أوتوماتيك '+h(new Date(c.sale_starts_at).toLocaleString('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'}))+'</span>':'<span class="badge pending">مفيش عرض شغال</span>'} السعر الحالي للطالب: <b>${fmtMoney(c.running?c.sale_price:c.price)} جنيه</b></p><label>السعر العادي (جنيه)</label><input id="prP${i}" type="number" dir="ltr" min="1" step="any" value="${c.price}"><label>سعر العرض (جنيه، لازم أقل من السعر العادي)</label><input id="prS${i}" type="number" dir="ltr" min="1" step="any" value="${c.sale_price!=null?c.sale_price:''}" placeholder="مثلاً 900"><label>العرض يبدأ (اختياري، بتوقيت القاهرة. سيبه فاضي = يبدأ أول ما تشغّله)</label><input id="prB${i}" type="datetime-local" dir="ltr" value="${_cairoLocal(c.sale_starts_at)}"><label>العرض بينتهي (اختياري، بتوقيت القاهرة)</label><input id="prE${i}" type="datetime-local" dir="ltr" value="${_cairoLocal(c.sale_ends_at)}"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="prA${i}" type="checkbox" style="width:auto;margin:0" ${c.sale_active?'checked':''}> تشغيل العرض</label><button class="btn" onclick="adminPriceSave('${h(c.id)}',${i})">💾 حفظ</button></div>`).join(''); }
 
 function _mcForm(c,i){ const n=c?'e'+i:'n'; return `<div class="card" style="margin:10px 0;background:rgba(255,255,255,.04)">${c?`<h3>${h(c.title)} ${c.hidden?'<span class="badge pending">🙈 مخفي</span>':'<span class="badge active">👁️ ظاهر</span>'}</h3><p class="small">طلاب مفعّلين: <b>${c.active_students}</b></p>`:'<h3>➕ كورس جديد</h3>'}<label>اسم الكورس</label><input id="mcT${n}" maxlength="120" value="${c?h(c.title):''}"><label>الوصف (اختياري)</label><textarea id="mcD${n}" maxlength="1000" rows="3">${c?h(c.description||''):''}</textarea><label>السعر (جنيه)</label><input id="mcP${n}" type="number" dir="ltr" min="1" step="any" value="${c?c.price:''}"><label style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="mcH${n}" ${(!c||c.hidden)&&!c?'checked':c&&c.hidden?'checked':''} style="width:auto"> مخفي عن الطلاب</label><button class="btn" onclick="adminCourseSave(${c?"'"+h(c.id)+"','"+n+"'":"null,'n'"})">${c?'💾 حفظ':'➕ إضافة الكورس'}</button></div>`; }
 async function adminCoursesLoad(){ const box=document.getElementById('mcBox'); if(!box) return; const r=await sb.rpc('admin_course_list'); if(r.error){ box.innerHTML=msgBox('مقدرتش أحمّل الكورسات.','err'); return; }
@@ -1267,9 +1277,10 @@ async function revokeAll(sid,name){
 async function adminPriceSave(id,i){ const g=k=>document.getElementById(k+i); const pr=parseFloat(g('prP').value), sv=g('prS').value.trim(), sp=sv?parseFloat(sv):null, ev=g('prE').value, on=g('prA').checked; const m=document.getElementById('prMsg');
   if(!(pr>0)){ m.innerHTML=msgBox('اكتب السعر العادي صح.','err'); return; }
   if(on&&!(sp>0&&sp<pr)){ m.innerHTML=msgBox('سعر العرض لازم يكون رقم أقل من السعر العادي.','err'); return; }
-  let en=null; if(ev){ for(const o of ['+03:00','+02:00']){ const t=new Date(ev+':00'+o); if(_cairoLocal(t.toISOString())===ev){ en=t.toISOString(); break; } } if(!en){ m.innerHTML=msgBox('التاريخ مش صح.','err'); return; } }
-  const r=await sb.rpc('admin_set_price',{p_course:id,p_price:pr,p_sale_price:sp,p_sale_ends:en,p_sale_active:on});
-  if(r.error){ m.innerHTML=msgBox(/bad end/.test(r.error.message)?'تاريخ انتهاء العرض لازم يكون في المستقبل.':/bad sale/.test(r.error.message)?'سعر العرض لازم يكون أقل من السعر العادي.':'حصل خطأ، ماتحفظش.','err'); return; }
+  const toIso=v=>{ if(!v) return null; for(const o of ['+03:00','+02:00']){ const t=new Date(v+':00'+o); if(_cairoLocal(t.toISOString())===v) return t.toISOString(); } return 'bad'; };
+  const en=toIso(ev), st=toIso(g('prB').value); if(en==='bad'||st==='bad'){ m.innerHTML=msgBox('التاريخ مش صح.','err'); return; }
+  const r=await sb.rpc('admin_set_price_v2',{p_course:id,p_price:pr,p_sale_price:sp,p_sale_starts:st,p_sale_ends:en,p_sale_active:on});
+  if(r.error){ m.innerHTML=msgBox(/bad range/.test(r.error.message)?'بداية العرض لازم تكون قبل نهايته.':/bad end/.test(r.error.message)?'تاريخ انتهاء العرض لازم يكون في المستقبل.':/bad sale/.test(r.error.message)?'سعر العرض لازم يكون أقل من السعر العادي.':'حصل خطأ، ماتحفظش.','err'); return; }
   m.innerHTML=msgBox('✅ اتحفظ.','ok'); adminPricesLoad(); }
 async function loadTcCourses(){ const el=document.getElementById('tcCourse'); if(!el||el.dataset.l) return; el.dataset.l=1; const r=await sb.from('courses').select('id,title'); (r.data||[]).forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.title; el.appendChild(o); }); if(el.dataset.want) el.value=el.dataset.want; }
 async function adminTeacherSave(){ const g=i=>document.getElementById(i).value.trim(); const code=g('tcCode'),tn=g('tcName'),ty=g('tcType'),pc=parseFloat(g('tcPct')),ex=g('tcExp'),cr=g('tcCourse'); const box=document.getElementById('tcMsg');
