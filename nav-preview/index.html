@@ -595,10 +595,11 @@ async function viewStudent(user){
     return;
   }
   const { data: _lall } = await sb.rpc('student_lectures_v2'); const _mc=window._myCourses||[];
+  const { data: _cl } = await sb.from('courses').select('id,title'); const _ct=id=>((_cl||[]).find(x=>x.id===id)||{}).title||id;
   const _avail = window._asStudent ? [...new Set((_lall||[]).map(x=>x.course_id))] : _mc;
   if(!window._curCourse||!_avail.includes(window._curCourse)) window._curCourse=_avail[0]||'photoshop';
   const lectures=(_lall||[]).filter(l=>l.course_id===window._curCourse);
-  const _sw = _avail.length>1 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${_avail.map(id=>{ const t=((_lall||[]).find(x=>x.course_id===id)||{}).course_title||id; return `<button class="btn ${id===window._curCourse?'':'ghost'}" onclick="enterCourse('${h(id)}')">${h(t)}</button>`; }).join('')}</div>` : '';
+  const _sw = _avail.length>1 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${_avail.map(id=>{ const t=_ct(id); return `<button class="btn ${id===window._curCourse?'':'ghost'}" onclick="enterCourse('${h(id)}')">${h(t)}</button>`; }).join('')}</div>` : '';
   window._wmText = st ? ((st.phone||'')+' · '+(st.student_code||'')) : '';
   window._trackOn = {}; (lectures||[]).forEach(l=>{ window._trackOn[l.id]=true; });
   const _tot=(lectures||[]).length, _dn=(lectures||[]).filter(l=>l.complete).length, _pct=_tot?Math.round(_dn*100/_tot):0;
