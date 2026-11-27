@@ -169,6 +169,7 @@ body::before{content:"";position:fixed;left:50%;top:50%;width:min(78vw,560px);he
 const SUPABASE_URL = 'https://ynlyugdjbncerwemyihg.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlubHl1Z2RqYm5jZXJ3ZW15aWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MDQyODUsImV4cCI6MjExMTI4MDI4NX0._1lOk-j8DnP_SyQlQGqEYC1LLZbgh9RAvmwwRHLyifQ';
 const ADMIN_EMAIL = 'walidamen087@gmail.com';
+const TERMS_URL = location.pathname.indexOf('/nav-preview')===0 ? '/nav-preview/terms/' : '/terms/';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const app = document.getElementById('app');
 const h = s => { const d=document.createElement('div'); d.innerText=s==null?'':String(s); return d.innerHTML; };
@@ -566,7 +567,8 @@ async function viewStudent(user){
           <button class="btn ghost" onclick="requestUnlock()" ${pending?'disabled':''}>📩 بلّغ أحمد إني حولت</button>
         </div>
       </div>
-    </div>`);
+    </div>
+    <div class="card" style="max-width:640px;margin:0 auto 22px"><h3 style="margin-bottom:8px">📜 الشروط وسياسة الاسترجاع</h3><p class="small" style="margin-bottom:10px">اقرأ قبل الشحن والشراء: الشراء نهائي ومفيش استرجاع، والرصيد جوه المنصة بس.</p><a class="btn ghost" href="${TERMS_URL}" target="_blank" rel="noopener">اقرأ الشروط</a></div>`);
     return;
   }
   if(studentView==='courses'){
@@ -579,6 +581,7 @@ async function viewStudent(user){
     return;
   }
   const { data: lectures } = await sb.rpc('student_lectures');
+  window._wmText = st ? ((st.phone||'')+' · '+(st.student_code||'')) : '';
   window._trackOn = {}; (lectures||[]).forEach(l=>{ window._trackOn[l.id]=true; });
   const _tot=(lectures||[]).length, _dn=(lectures||[]).filter(l=>l.done).length, _pct=_tot?Math.round(_dn*100/_tot):0;
   let list = (lectures||[]).map((l,i)=>`
@@ -623,6 +626,19 @@ async function playLecture(id){
 let _ytP;
 function loadYT(){ return _ytP||(_ytP=new Promise(r=>{ if(window.YT&&YT.Player) return r(); const t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; window.onYouTubeIframeAPIReady=()=>r(); document.head.appendChild(t); })); }
 const _lecTracked = {};
+function wrapWM(id, box){
+  const el=box.querySelector('video')||box.querySelector('iframe'); if(!el||el.parentNode.classList.contains('vwrap')) return;
+  if(el.tagName==='IFRAME'){ el.removeAttribute('allowfullscreen'); }
+  else { el.setAttribute('controlsList','nofullscreen nodownload'); el.setAttribute('disablePictureInPicture',''); el.setAttribute('playsinline',''); el.oncontextmenu=()=>false; }
+  const w=document.createElement('div'); w.className='vwrap'; w.style.cssText='position:relative;background:#000;border-radius:14px;overflow:hidden';
+  el.parentNode.insertBefore(w, el); w.appendChild(el);
+  const t=document.createElement('div'); t.className='wm'; t.textContent=window._wmText||'';
+  t.style.cssText='position:absolute;z-index:3;pointer-events:none;direction:ltr;font:700 clamp(12px,2.2vw,18px) Tahoma,Arial;color:rgba(255,255,255,.3);text-shadow:0 0 3px rgba(0,0,0,.6);transition:top 2.5s ease,left 2.5s ease;white-space:nowrap;top:10%;left:10%';
+  w.appendChild(t);
+  const mv=()=>{ t.style.top=(8+Math.random()*78)+'%'; t.style.left=(4+Math.random()*60)+'%'; }; mv(); const iv=setInterval(()=>{ if(!document.body.contains(w)) clearInterval(iv); else mv(); },4500);
+  const fb=document.createElement('button'); fb.className='btn ghost'; fb.textContent='⛶ ملء الشاشة'; fb.style.cssText='position:absolute;z-index:4;bottom:44px;left:8px;padding:4px 10px;font-size:12px;opacity:.85';
+  fb.onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else (w.requestFullscreen||w.webkitRequestFullscreen||function(){}).call(w); }; w.appendChild(fb);
+}
 async function lecDone(id, dur){
   if(_lecTracked[id]==='done') return; _lecTracked[id]='done';
   const { error } = await sb.rpc('lecture_done', { p_id:id, p_dur: Math.round(dur||0) });
@@ -661,7 +677,7 @@ async function switchServer(id, n){
       <button class="btn ${n===2?'':'ghost'}" onclick="switchServer(${id},2)">سيرفر 2</button>
       <span class="small" style="align-self:center">لو الفيديو بطيء أو مش بيشتغل جرّب السيرفر التاني.</span></div>` : '';
   box.innerHTML = btns + (html || msgBox('حصلت مشكلة في تحميل الفيديو، جرّب السيرفر التاني أو حاول بعد شوية.','err'));
-  if(html){ _lecTracked[id]=''; attachTrack(id, box).catch(()=>{}); }
+  if(html){ _lecTracked[id]=''; if(window._trackOn&&window._trackOn[id]) wrapWM(id, box); attachTrack(id, box).catch(()=>{}); }
 }
 const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
@@ -671,7 +687,7 @@ function askBuy(){
   const c=window._course||{title:'الكورس',price:COURSE_PRICE};
   const ov=document.createElement('div'); ov.id='buyModal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
+  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p class="small" style="margin-bottom:8px;color:#fbbf24">⚠️ الشراء نهائي ومفيش استرجاع بعد التأكيد.</p><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
   document.body.appendChild(ov);
 }
 function closeBuy(){ const o=document.getElementById('buyModal'); if(o) o.remove(); }
