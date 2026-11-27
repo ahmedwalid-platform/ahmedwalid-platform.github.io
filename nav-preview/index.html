@@ -170,7 +170,7 @@ async function saveProfile(uid){
   studentView='home'; if(document.querySelector('#tabs.scroll')) curTab='profile'; await route();
 }
 const alog_=(a,n,r,sid)=>sb.rpc('admin_log',{p_action:a,p_name:n||'-',p_reason:r||'-',p_student:sid||null});
-async function refreshBell(){ const b=document.getElementById('bell'); if(!b) return; const { count } = await sb.from('notifications').select('id',{count:'exact',head:true}).is('read_at',null); const n=document.getElementById('bellN'); const prev=+n.innerText||0; n.innerText=count>99?'99+':count; n.classList.toggle('hidden',!count); if(count>prev && prev>=0 && window._bellInit){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); } window._bellInit=true; }
+async function refreshBell(){ const b=document.getElementById('bell'); if(!b) return; const { count } = await sb.from(window._bellTbl||'notifications').select('id',{count:'exact',head:true}).is('read_at',null); const n=document.getElementById('bellN'); const prev=+n.innerText||0; n.innerText=count>99?'99+':count; n.classList.toggle('hidden',!count); if(count>prev && prev>=0 && window._bellInit){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); } window._bellInit=true; }
 function startBell(){ const b=document.getElementById('bell'); b.classList.remove('hidden'); refreshBell(); if(!window._bellT) window._bellT=setInterval(()=>{ if(!document.hidden) refreshBell(); },30000); }
 async function viewInbox(st){
   const { data } = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
@@ -416,7 +416,7 @@ async function viewStudent(user){
   if(studentView==='lectures' && !active) studentView='courses';
   renderTabs('student', TAB_OF[studentView]); ensureBot();
   const greet = `<div class="card" style="max-width:640px;margin:0 auto 18px"><h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>${codeChip(st)}<p class="small" style="margin-top:8px">${active?'اشتراكك مفعّل ✅ ادخل على تبويب الكورسات.':'ابدأ بالكورس المجاني، وبعدها اشترك في الكورس الأساسي من تبويب الكورسات.'}</p></div>`;
-  startBell();
+  window._bellTbl='notifications'; startBell();
   if(studentView==='inbox'){ await viewInbox(st); return; }
   if(studentView==='chat'){ await viewChat(st); return; }
   if(studentView==='profile'){ await viewProfile(st); app.insertAdjacentHTML('beforeend', pwCard()); return; }
@@ -583,8 +583,10 @@ async function viewAdmin(user, role){
   const { data: staffRows } = await sb.from('staff').select('*');
   const { data: alog } = await sb.from('admin_action_log').select('*').order('created_at',{ascending:false}).limit(300);
   const { data: wtx } = await sb.from('wallet_transactions').select('*').order('created_at',{ascending:false}).limit(30);
+  const { data: anotifs } = await sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100);
   const { data: resets } = await sb.from('password_reset_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
   _students = students||[];
+  window._bellTbl='admin_notifications'; startBell();
   const nameOf = id => { const s=(students||[]).find(x=>x.id===id); return s ? s.full_name : id.slice(0,8); };
   const reqRows = (reqs||[]).map(r=>`<tr>
     <td>${h(r.sender_name || nameOf(r.student_id))}</td>
@@ -719,6 +721,10 @@ async function viewAdmin(user, role){
     <label>العنوان</label><input id="paddr" value="${h(me.address||'')}">
     <div style="margin-top:16px"><button class="btn" onclick="saveProfile('${me.id}')">💾 حفظ</button></div>` : '';
     app.insertAdjacentHTML('afterbegin', `<div class="card" data-tab="profile"><h2>👤 الملف الشخصي</h2><p style="margin-top:8px"><b>${isMain?'أحمد وليد (الأدمن الرئيسي)':'مساعد أدمن'}</b></p><p class="small" dir="ltr" style="text-align:right">${h(user.email)}</p>${form}</div>`); }
+  { const AK={register:'🆕',purchase:'🛒',topup:'💰',adjust:'✏️',transfer_report:'📩',chat:'💬',reset:'🔑'};
+    const L=(anotifs||[]).map(n=>`<div class="notif ${n.read_at?'':'new'}"><b>${h(n.title)}</b>${n.read_at?'':' <span class="badge active">جديد</span>'}<p style="margin-top:6px">${h(n.body)}</p><p class="small" style="margin-top:6px">${new Date(n.created_at).toLocaleString('ar-EG')}${n.student_id?` · <a href="#" onclick="adminProfile('${n.student_id}');return false">فتح ملف الطالب</a>`:''}</p></div>`).join('') || '<p class="small" style="margin-top:12px">مفيش إشعارات لسه. أي حاجة تحصل على المنصة هتظهر هنا.</p>';
+    app.insertAdjacentHTML('afterbegin',`<div class="card" data-tab="inbox"><h2>🔔 إشعارات المنصة</h2><p class="small" style="margin:6px 0 10px">تسجيل جديد، شراء، شحن، بلاغ تحويل، رسائل الطلاب، طلبات نسيت كلمة السر.</p>${L}</div>`);
+    if(curTab==='inbox' && (anotifs||[]).some(n=>!n.read_at)){ sb.rpc('admin_notifs_read').then(()=>{ const nn=document.getElementById('bellN'); if(nn){ nn.innerText='0'; nn.classList.add('hidden'); } }); } }
   app.insertAdjacentHTML('afterbegin','<div class="card" data-tab="chats"><h2>💬 رسائل الطلاب</h2><div id="chatsBody" style="margin-top:12px"><p class="small">جارِ التحميل...</p></div></div>');
   renderTabs('admin', curTab); watchPresence(); adminChats(); if(window._aChT) clearInterval(window._aChT); window._aChT=setInterval(()=>{ const b=document.getElementById('chatsBody'); if(!b){ clearInterval(window._aChT); return; } if(!document.hidden && curTab==='chats' && !(document.getElementById('aIn')&&document.getElementById('aIn').value)) adminChats(); },10000);
   const RULES=[[/رسائل الطلاب/,'chats'],[/سجل كل/,'log'],[/سجل شحن/,'pay'],[/شحن رصيد طالب|تصحيح يدوي/,'topup'],[/المساعدين/,'staff'],[/الملف الشخصي|تغيير كلمة سر/,'profile'],[/إضافة محاضرة/,'addlec'],[/المحاضرات الحالية|معاينة|محاضر/,'courses'],[/فتح ملف|الطلاب/,'students'],[/.*/,'home']];
