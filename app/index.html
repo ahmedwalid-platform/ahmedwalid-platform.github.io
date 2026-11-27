@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261127g';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
+<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script>(function(){var B='20261127h';try{fetch('/version.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(j.v!==B&&!/[?&]v=/.test(location.search+'')||(j.v!==B&&location.search.indexOf('v='+j.v)<0)){location.replace(location.pathname+'?v='+j.v)}}).catch(function(){})}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google-site-verification" content="ljd6nUDsgidW-Z4yNcFsUsPwY3ZZld_VHcTIZCJL6eo" />
@@ -48,6 +48,7 @@ th{color:#b3bad6;font-weight:700}
 .video-box video,.video-box iframe{width:100%;aspect-ratio:16/9;border-radius:14px;border:1px solid rgba(167,139,250,.3);background:#000}
 .lecture{border:1px solid rgba(167,139,250,.22);border-right:4px solid #ec4899;border-radius:16px;padding:18px;margin-bottom:14px;background:rgba(11,15,29,.65);transition:border-color .15s}
 .lecture:hover{border-color:rgba(236,72,153,.5)}
+.lecture.locked{opacity:.6;border-right-color:#64748b}.lecture.done{border-right-color:#34d399}.pbar{height:16px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin:10px 0}.pbar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ec4899,#a78bfa,#34d399);transition:width .6s}
 .lecture h3{color:#c4b5fd;margin-bottom:6px;font-size:17px}
 .paynum{font-size:28px;font-weight:900;color:#4ade80;letter-spacing:3px;direction:ltr;text-align:center;background:#0b0f1d;padding:12px;border-radius:12px;margin:12px 0;border:1px solid rgba(74,222,128,.35)}
 .center{text-align:center}
@@ -141,7 +142,7 @@ header h1{display:flex;align-items:center;gap:10px}
 .sfoot .wa{background:linear-gradient(135deg,#25d366,#128c7e)}
 .sfoot .cp{margin-top:18px;font-size:12px;color:#8e97b8}
 body::before{content:"";position:fixed;left:50%;top:50%;width:min(78vw,560px);height:min(78vw,560px);transform:translate(-50%,-50%);background:url(/media/logo.png) center/contain no-repeat;opacity:.08;z-index:5;pointer-events:none}</style>
-<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/media/favicon-32.png"><link rel="apple-touch-icon" href="/media/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b0f1d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"></head>
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/media/favicon-32.png"><link rel="apple-touch-icon" href="/media/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="أحمد وليد"><meta name="application-name" content="أحمد وليد"><meta name="theme-color" content="#0b0f1d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"></head>
 <body>
 <div id="loader"><div class="lg"><img src="/media/logo.png" alt="Ahmed walid"></div><div class="bar"><i></i></div></div>
 <header>
@@ -150,6 +151,7 @@ body::before{content:"";position:fixed;left:50%;top:50%;width:min(78vw,560px);he
   <div>
     <button id="bell" class="bell hidden" onclick="goTab('inbox')" title="الإشعارات">🔔<span id="bellN" class="bn hidden">0</span></button>
     <span id="whoami" class="small"></span>
+    <button id="instHdr" class="btn ghost hidden" onclick="doInstall()" style="padding:6px 12px">📲 ثبّت التطبيق</button>
     <button id="logoutBtn" class="btn ghost hidden" onclick="logout()">تسجيل خروج</button>
   </div>
 </header>
@@ -565,7 +567,8 @@ async function viewStudent(user){
           <button class="btn ghost" onclick="requestUnlock()" ${pending?'disabled':''}>📩 بلّغ أحمد إني حولت</button>
         </div>
       </div>
-    </div>`);
+    </div>
+    <div class="card" id="termsBox" style="max-width:640px;margin:0 auto 22px"><h3 style="margin-bottom:8px">📜 الشروط وسياسة الاسترجاع</h3><div class="small" style="font-size:15px;line-height:1.9"><h4 style="margin:12px 0 4px;color:#c4b5fd">1) عن المنصة</h4><p>منصة بتقدم كورس أساسيات الفوتوشوب أونلاين مع أحمد وليد. بتسجيل حسابك أو بشراء الكورس أنت موافق على الشروط دي.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">2) شحن الرصيد</h4><p>الشحن بيتم بتحويل على اتصالات كاش 01143757857، وبعدين تبعت لأحمد اسمك وكودك (6 أرقام) على واتساب. الرصيد بيتضاف بعد ما أحمد يتأكد من التحويل.</p><p>الرصيد ده رصيد جوه المنصة وبيتصرف على الكورس بس، ومش بيتحوّل لفلوس كاش ومش بيتسحب.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">3) شراء الكورس</h4><p>سعر الكورس بيتخصم من رصيدك لما تضغط "اشتري الآن" وبعدين تأكد في الرسالة اللي بتظهر قبل الشراء. بعد التأكيد الكورس بيتفتحلك على طول.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">4) الشراء نهائي ومفيش استرجاع</h4><p>بعد ما تأكد الشراء مفيش استرجاع للمبلغ، سواء فتحت المحاضرات أو لأ، لأن الكورس محتوى رقمي بيتفتح فوراً. رسالة التأكيد اللي بتظهر قبل الشراء هي موافقتك على ده، فاتأكد إنك عايز الكورس قبل ما تؤكد.</p><p>وفي حالة نادرة لو حصل خطأ من المنصة نفسها (زي خصم مرتين)، أحمد بيصلحه وبيرجّع المبلغ كرصيد في محفظتك على المنصة بس، مش كاش على اتصالات.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">5) لو عندك مشكلة أو اعتراض على دفع أو خصم</h4><p>كلّم أحمد على واتساب 01143757857 ومعاك اسمك وكودك وتاريخ العملية، وهيرد عليك ويحاول يحلها ودياً.</p><a class="btn wa" style="margin-top:6px" target="_blank" rel="noopener noreferrer" href="https://wa.me/201143757857">كلّم أحمد على واتساب</a><h4 style="margin:12px 0 4px;color:#c4b5fd">6) مفيش ضمان لنتيجة معينة</h4><p>الكورس بيشرح ويدرّب، ونتيجتك بتعتمد على مجهودك وتطبيقك. مفيش وعد بوظيفة أو دخل.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">7) استخدام المحتوى</h4><p>الفيديوهات والمواد لاستخدامك الشخصي بس. ممنوع تشاركها أو تسجّلها أو تعيد نشرها، ولو حصل الحساب ممكن يتقفل من غير استرجاع.</p><h4 style="margin:12px 0 4px;color:#c4b5fd">8) تعديل الشروط</h4><p>ممكن الشروط تتعدل، والنسخة المنشورة على المنصة هي المعتمدة.</p><p class="small" style="margin-top:12px;opacity:.7">ده نص عام ومش استشارة قانونية.</p></div></div>`);
     return;
   }
   if(studentView==='courses'){
@@ -577,27 +580,34 @@ async function viewStudent(user){
     setMsg(freeCard()+courseHero(cta));
     return;
   }
-  const { data: lectures } = await sb.from('lectures').select('*').order('sort_order');
+  const { data: lectures } = await sb.rpc('student_lectures');
+  window._wmText = st ? ((st.phone||'')+' · '+(st.student_code||'')) : '';
+  window._trackOn = {}; (lectures||[]).forEach(l=>{ window._trackOn[l.id]=true; });
+  const _tot=(lectures||[]).length, _dn=(lectures||[]).filter(l=>l.done).length, _pct=_tot?Math.round(_dn*100/_tot):0;
   let list = (lectures||[]).map((l,i)=>`
-    <div class="lecture">
-      <h3>${i+1}. ${h(l.title)}</h3>
-      <p class="small">${h(l.description||'')}</p>
-      <button class="btn ghost" style="margin-top:12px" onclick="playLecture(${l.id})">▶ مشاهدة الفيديو</button>
-      <div class="video-box hidden" id="vid-${l.id}"></div>
+    <div class="lecture ${l.done?'done':(l.unlocked?'':'locked')}" id="lec-${l.id}">
+      <h3>${l.done?'✅':(l.unlocked?'▶️':'🔒')} ${i+1}. ${h(l.title)}</h3>
+      ${l.unlocked?`<p class="small">${h(l.description||'')}</p>${l.max_views>0?`<p class="small" style="margin-top:6px">👁️ المشاهدات المتبقية: <b id="vl-${l.id}">${Math.max(0,l.max_views-l.views)}</b> من ${l.max_views}</p>`:''}`:'<p class="small">مقفولة. خلّص المحاضرة اللي قبلها لحد آخرها وهتتفتح لوحدها.</p>'}
+      ${l.done?'<span class="badge active">تمت المشاهدة ✅</span>':''}
+      ${l.unlocked&&l.max_views>0&&l.views>=l.max_views?'<div class="msg err">🚫 خلصت مرات مشاهدة المحاضرة دي ('+l.max_views+' من '+l.max_views+'). لو محتاج مرات زيادة كلّم أحمد على واتساب.</div>':''}
+      ${l.unlocked&&!(l.max_views>0&&l.views>=l.max_views)?`<button class="btn ${l.done?'ghost':''}" style="margin-top:12px" onclick="playLecture(${l.id})">${l.done?'🔁 إعادة المشاهدة':'▶ مشاهدة الفيديو'}</button>
+      <div class="video-box hidden" id="vid-${l.id}"></div>`:''}
     </div>`).join('');
   if(!lectures || !lectures.length) list = msgBox('المحاضرات هتتضاف قريبا','info');
+  const progCard = _tot ? `<div class="card"><h2>📈 تقدمك في الكورس</h2><div class="pbar"><i style="width:${_pct}%"></i></div><p><b>${_pct}%</b> <span class="small">(${_dn} من ${_tot} محاضرات خلصت)</span></p><p class="small">المحاضرة بتتحسب خلصت لما الفيديو يوصل لآخره، وبعدها اللي بعدها بتتفتح لوحدها.</p></div>` : '';
   setMsg(`
   <div style="text-align:left;margin-bottom:12px"><button class="btn ghost" id="backCourses" onclick="studentView='courses';window.scrollTo(0,0);route()">← رجوع للكورسات</button></div>
   <div class="card">
     <h2>أهلاً ${h(st ? st.full_name : '')} 👋</h2>
     <p style="margin:10px 0">حالة الاشتراك: <span class="badge active">مفعّل ✅</span></p>
   </div>
+  ${progCard}
   <div class="card"><h2 style="margin-bottom:16px">📚 محاضرات الكورس</h2>${list}</div>`);
 }
 async function sourceHtml(u){
   if(!u) return '';
   const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  if(yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>`;
+  if(yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1&enablejsapi=1" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>`;
   const gd = u.match(/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?(?:[^#]*&)?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})/);
   if(gd) return `<iframe src="https://drive.google.com/file/d/${gd[1]}/preview" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
   if(/^https?:\/\//.test(u)) return `<video controls preload="metadata" src="${h(u)}"></video>`;
@@ -614,6 +624,52 @@ async function playLecture(id){
   box.classList.remove('hidden');
   await switchServer(id, 1);
 }
+let _ytP;
+function loadYT(){ return _ytP||(_ytP=new Promise(r=>{ if(window.YT&&YT.Player) return r(); const t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; window.onYouTubeIframeAPIReady=()=>r(); document.head.appendChild(t); })); }
+const _lecTracked = {}; const _sess = {}; const _cnt = {};
+async function countView(id, dur){ if(_cnt[id]||!_sess[id]) return; _cnt[id]=true; const { error } = await sb.rpc('lecture_half',{ p_session:_sess[id], p_dur:Math.round(dur||0) }); if(error){ _cnt[id]=false; return; } const e=document.getElementById('vl-'+id); if(e){ e.textContent=Math.max(0,parseInt(e.textContent||'0')-1); } }
+function wrapWM(id, box){
+  const el=box.querySelector('video')||box.querySelector('iframe'); if(!el||el.parentNode.classList.contains('vwrap')) return;
+  if(el.tagName==='IFRAME'){ el.removeAttribute('allowfullscreen'); }
+  else { el.setAttribute('controlsList','nofullscreen nodownload'); el.setAttribute('disablePictureInPicture',''); el.setAttribute('playsinline',''); try{ el.controlsList.add('nofullscreen'); el.controlsList.add('nodownload'); }catch(e){} el.oncontextmenu=()=>false; }
+  const w=document.createElement('div'); w.className='vwrap'; w.style.cssText='position:relative;background:#000;border-radius:14px;overflow:hidden';
+  el.parentNode.insertBefore(w, el); w.appendChild(el);
+  const t=document.createElement('div'); t.className='wm'; t.textContent=window._wmText||'';
+  t.style.cssText='position:absolute;z-index:3;pointer-events:none;direction:ltr;font:700 clamp(12px,2.2vw,18px) Tahoma,Arial;color:rgba(255,255,255,.3);text-shadow:0 0 3px rgba(0,0,0,.6);transition:top 2.5s ease,left 2.5s ease;white-space:nowrap;top:10%;left:10%';
+  w.appendChild(t);
+  const mv=()=>{ t.style.top=(8+Math.random()*78)+'%'; t.style.left=(4+Math.random()*60)+'%'; }; mv(); const iv=setInterval(()=>{ if(!document.body.contains(w)) clearInterval(iv); else mv(); },4500);
+  const fb=document.createElement('button'); fb.className='btn ghost'; fb.textContent='⛶ ملء الشاشة'; fb.style.cssText='position:absolute;z-index:4;top:8px;right:8px;padding:4px 10px;font-size:12px;opacity:.85';
+  fb.onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else (w.requestFullscreen||w.webkitRequestFullscreen||function(){}).call(w); }; w.appendChild(fb);
+}
+async function lecDone(id, dur){
+  if(_lecTracked[id]==='done') return; _lecTracked[id]='done';
+  const { error } = await sb.rpc('lecture_done', { p_id:id, p_dur: Math.round(dur||0) });
+  const box=document.getElementById('vid-'+id);
+  if(error){ _lecTracked[id]=''; if(box) box.insertAdjacentHTML('afterbegin', msgBox('مقدرناش نسجل إنك خلصت المحاضرة. شغّل الفيديو لآخره من غير ما تقدّم.','err')); return; }
+  if(box) box.insertAdjacentHTML('afterbegin', msgBox('🎉 برافو! خلصت المحاضرة. اللي بعدها بتتفتح دلوقتي...','ok'));
+  setTimeout(()=>{ studentView='lectures'; route(); }, 1800);
+}
+async function attachTrack(id, box){
+  if(!(window._trackOn && window._trackOn[id])) return;
+  if(_lecTracked[id]==='on') return;
+  const v=box.querySelector('video'), f=box.querySelector('iframe');
+  if(!v && !f) return;
+  const pl = await sb.rpc('lecture_play', { p_id:id });
+  if(pl.error){ box.insertAdjacentHTML('afterbegin', msgBox(/limit/.test(pl.error.message)?'خلصت مرات مشاهدة المحاضرة دي. كلّم أحمد لو محتاج مرات زيادة.':'مش قادر أفتح المحاضرة دلوقتي.','err')); const vv=box.querySelector('video'); if(vv) vv.remove(); const ff=box.querySelector('iframe'); if(ff) ff.remove(); return; }
+  _sess[id]=pl.data; _lecTracked[id]='on';
+  if(v){
+    let max=0;
+    v.addEventListener('timeupdate',()=>{ if(!v.seeking && v.currentTime>max && v.currentTime-max<2.5) max=v.currentTime; if(v.duration && max>=v.duration*0.5) countView(id, v.duration); });
+    v.addEventListener('seeking',()=>{ if(v.currentTime>max+1.5) v.currentTime=max; });
+    v.addEventListener('ended',()=>lecDone(id, v.duration));
+  } else if(/youtube\.com\/embed/.test(f.src)){
+    await loadYT(); let max=0;
+    const p=new YT.Player(f,{events:{onStateChange:e=>{ if(e.data===0) lecDone(id, p.getDuration()); }}});
+    setInterval(()=>{ try{ const t=p.getCurrentTime(); if(t>max && t-max<3) max=t; else if(t>max+3) p.seekTo(max,true); const dd=p.getDuration(); if(dd && max>=dd*0.5) countView(id, dd); }catch(e){} },500);
+  } else {
+    box.insertAdjacentHTML('beforeend','<button class="btn green" style="margin-top:10px;width:100%" onclick="lecDone('+id+',0)">✅ خلصت المحاضرة</button>');
+  }
+}
 async function switchServer(id, n){
   const box = document.getElementById('vid-'+id);
   const src = _lecSrc[id] || [];
@@ -624,6 +680,7 @@ async function switchServer(id, n){
       <button class="btn ${n===2?'':'ghost'}" onclick="switchServer(${id},2)">سيرفر 2</button>
       <span class="small" style="align-self:center">لو الفيديو بطيء أو مش بيشتغل جرّب السيرفر التاني.</span></div>` : '';
   box.innerHTML = btns + (html || msgBox('حصلت مشكلة في تحميل الفيديو، جرّب السيرفر التاني أو حاول بعد شوية.','err'));
+  if(html){ _lecTracked[id]=''; _cnt[id]=false; if(window._trackOn&&window._trackOn[id]) wrapWM(id, box); attachTrack(id, box).catch(()=>{}); }
 }
 const COURSE_PRICE = 1300;
 function codeChip(st){ return st&&st.student_code ? `<p style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="badge active" style="font-size:15px">🆔 كودك: <b dir="ltr" style="letter-spacing:2px">${h(st.student_code)}</b></span><button class="btn ghost" onclick="goProfile()">✏️ ملفي الشخصي</button></p>` : ''; }
@@ -633,7 +690,7 @@ function askBuy(){
   const c=window._course||{title:'الكورس',price:COURSE_PRICE};
   const ov=document.createElement('div'); ov.id='buyModal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
+  ov.innerHTML=`<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">هل ده الكورس اللي عايز تشتريه؟</h2><p class="small" style="margin-bottom:8px;color:#fbbf24">⚠️ الشراء نهائي ومفيش استرجاع بعد التأكيد.</p><p style="font-size:18px"><b>${h(c.title)}</b></p><p style="font-size:20px;margin:8px 0 14px">💳 ${fmtMoney(c.price)} جنيه</p><p class="small" style="margin-bottom:14px">هيتخصم من رصيد محفظتك والكورس هيتفتحلك على طول.</p><div id="buyModalMsg"></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="buyYes" onclick="confirmBuy()">✅ أيوه، اشتري</button><button class="btn ghost" id="buyNo" onclick="closeBuy()">لأ، رجوع</button></div></div>`;
   document.body.appendChild(ov);
 }
 function closeBuy(){ const o=document.getElementById('buyModal'); if(o) o.remove(); }
@@ -659,6 +716,14 @@ function codeLookup(){
   const st=_students.find(x=>x.student_code===c);
   document.getElementById('tname').innerHTML = !c ? '' : st ? `<span class="badge active">✅ ${h(st.full_name)} (رصيده الحالي ${fmtMoney(st.balance)})</span>` : '<span class="badge pending">مفيش طالب بالكود ده</span>';
 }
+async function adminSetViews(sid,lid,used){ used=Math.max(0,parseInt(used)); if(isNaN(used)) return; const { error } = await sb.rpc('admin_set_views',{ p_sid:sid, p_lid:lid, p_used:used }); if(error){ alert('حصلت مشكلة'); return; } await loadLProg(sid); }
+async function adminRemainSet(sid,lid,max){ const el=document.getElementById('rem-'+lid); const rem=parseInt(el.value); if(isNaN(rem)||rem<0||rem>max){ alert('اكتب رقم من 0 لـ '+max); return; } await adminSetViews(sid,lid,max-rem); }
+async function loadLProg(sid){
+  const box=document.getElementById('lprog'); if(!box) return;
+  const { data } = await sb.rpc('admin_lecture_progress',{ p_sid:sid });
+  if(!data||!data.length){ box.innerHTML=''; return; }
+  box.innerHTML='<h3 style="margin-bottom:8px">🎓 تقدم الطالب ومرات المشاهدة</h3><div style="overflow-x:auto"><table><tr><th>المحاضرة</th><th>الحالة</th><th>المتبقي</th><th>تعديل</th></tr>'+data.map(r=>{ const lim=r.max_views>0; const rem=lim?Math.max(0,r.max_views-r.views):''; return '<tr><td>'+h(r.title)+'</td><td>'+(r.done?'✅ خلصت':'—')+'</td><td>'+(lim?'<b>'+rem+'</b> من '+r.max_views+' (استخدم '+r.views+')':'بلا حد')+'</td><td style="white-space:nowrap">'+(lim?'<input id="rem-'+r.lecture_id+'" type="number" dir="ltr" min="0" max="'+r.max_views+'" value="'+rem+'" style="width:70px;display:inline-block;margin:0"> <button class="btn" onclick="adminRemainSet(\''+sid+'\','+r.lecture_id+','+r.max_views+')">حفظ</button> <button class="btn ghost" onclick="adminSetViews(\''+sid+'\','+r.lecture_id+',0)">تصفير (رجّع '+r.max_views+')</button> <button class="btn ghost" onclick="adminSetViews(\''+sid+'\','+r.lecture_id+','+Math.max(0,r.views-1)+')">+1</button>':'—')+'</td></tr>'; }).join('')+'</table></div>';
+}
 async function adminProfile(sid){
   const { data: st } = await sb.from('students').select('*, enrollments(status)').eq('id', sid).single();
   if(!st){ alert('الطالب مش موجود'); return; }
@@ -669,8 +734,10 @@ async function adminProfile(sid){
     <h2>👤 ملف الطالب</h2>
     <div style="text-align:center;margin:14px 0">${url?`<img src="${url}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid #a78bfa">`:'<div style="font-size:64px">🙂</div>'}</div>
     <table>${row('الاسم',st.full_name)}${row('الكود',st.student_code)}${row('الإيميل',st.email)}${row('السن',st.age)}${row('موبايل الطالب',st.phone)}${row('موبايل ولي الأمر',st.guardian_phone)}${row('المحافظة',st.governorate)}${row('العنوان',st.address)}${row('الرصيد',fmtMoney(st.balance)+' جنيه')}${row('الحالة',act?'مفعّل':'منتظر')}</table>
+    <div id="lprog" style="margin-top:16px"></div>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" onclick="route()">← رجوع للوحة</button>${st.phone?`<a class="btn wa" target="_blank" href="https://wa.me/2${h(st.phone)}">واتساب الطالب</a>`:''}</div>
   </div>`);
+  loadLProg(sid);
 }
 function searchStudents(){
   const q=document.getElementById('sq').value.trim().toLowerCase(); const qn=normPhone(q);
@@ -698,6 +765,24 @@ async function requestUnlock(){
   route();
 }
 
+function csvCell(x){ if(x==null) return ''; x=String(x); if(/^[=+\-@]/.test(x)) x="'"+x; return '"'+x.replace(/"/g,'""')+'"'; }
+function dlCsv(name, rows){ const blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }
+async function fetchAll(tbl, sel, order){ let out=[],from=0; for(;;){ const { data, error } = await sb.from(tbl).select(sel).order(order,{ascending:true}).range(from,from+999); if(error) throw error; out=out.concat(data||[]); if(!data||data.length<1000) break; from+=1000; } return out; }
+async function downloadBackup(){
+  const m=document.getElementById('bkmsg'); const { data: s0 } = await sb.auth.getSession();
+  if(!s0.session || s0.session.user.email!==ADMIN_EMAIL){ if(m) m.innerHTML=msgBox('النسخة الاحتياطية للأدمن الرئيسي بس.','err'); return; }
+  try{
+    if(m) m.innerHTML=msgBox('جارِ التجهيز...','info');
+    const st=await fetchAll('students','student_code,full_name,email,phone,guardian_phone,governorate,address,age,balance,created_at,enrollments(status)','created_at');
+    const tx=await fetchAll('wallet_transactions','created_at,student_id,amount,kind,note,balance_after','created_at');
+    const { data: all } = await sb.from('students').select('id,student_code,full_name');
+    const by={}; (all||[]).forEach(s=>{ by[s.id]=s; });
+    const d=new Date().toISOString().slice(0,10);
+    dlCsv('students-backup-'+d+'.csv', [['الكود','الاسم','الإيميل','الموبايل','موبايل ولي الأمر','المحافظة','العنوان','السن','الرصيد','الحالة','تاريخ التسجيل']].concat(st.map(s=>[s.student_code,s.full_name,s.email,s.phone,s.guardian_phone,s.governorate,s.address,s.age,s.balance,(s.enrollments&&s.enrollments.status)==='active'?'مفعّل':'منتظر',s.created_at])));
+    setTimeout(()=>dlCsv('transactions-backup-'+d+'.csv', [['التاريخ','كود الطالب','اسم الطالب','المبلغ','النوع','ملاحظة','الرصيد بعد']].concat(tx.map(t=>{ const s=by[t.student_id]||{}; return [t.created_at,s.student_code,s.full_name,t.amount,t.kind,t.note,t.balance_after]; }))),700);
+    if(m) m.innerHTML=msgBox('تم ✅ نزل ملفين: '+st.length+' طالب و '+tx.length+' عملية. لو المتصفح سأل "السماح بتحميلات متعددة" اضغط سماح.','ok');
+  }catch(e){ if(m) m.innerHTML=msgBox('حصلت مشكلة في النسخة الاحتياطية.','err'); }
+}
 async function viewAdmin(user, role){
   const isMain = !role || role==='main';
   setMsg(`<div class="card"><h2>لوحة تحكم الأدمن 🛠️</h2><p class="small">جارِ التحميل...</p></div>`);
@@ -760,6 +845,7 @@ async function viewAdmin(user, role){
     <input id="sq" placeholder="اكتب الكود أو الاسم أو الإيميل" oninput="searchStudents()">
     <div id="sres" style="margin-top:8px"></div>
   </div>
+  ${isMain?`<div class="card" id="backupCard"><h2 style="margin-bottom:6px">💾 نسخة احتياطية</h2><p class="small" style="margin-bottom:12px">بتنزّل ملفين Excel: الطلاب وأرصدتهم، وكل عمليات المحفظة. فيها بيانات شخصية فاحفظهم في مكان آمن ومتشاركهمش. مفيش كلمات سر فيها.</p><div id="bkmsg"></div><button class="btn" style="width:100%" onclick="downloadBackup()">💾 نزّل النسخة الاحتياطية</button></div>`:''}
   <div class="card" id="topupCard">
     <h2 style="margin-bottom:14px">💰 شحن رصيد طالب</h2>
     <div id="tmsg"></div>
@@ -820,6 +906,8 @@ async function viewAdmin(user, role){
     <h3 style="margin:14px 0 6px">سيرفر 2 (اختياري، نسخة تانية من نفس الفيديو)</h3>
     <label>ارفع ملف الفيديو للسيرفر 2 (mp4، لحد 50 ميجا)</label><input id="lfile2" type="file" accept="video/mp4,video/*">
     <label>أو رابط للسيرفر 2 (يوتيوب غير مدرج / جوجل درايف / mp4 مباشر)</label><input id="lurl2" dir="ltr" placeholder="https://youtu.be/...">
+    <label>مدة الفيديو بالدقايق (مهم لقفل المحاضرات، بيتحسب لوحده لو رفعت ملف)</label><input id="ldur" type="number" dir="ltr" step="0.1" placeholder="مثلاً 45">
+    <label>عدد مرات المشاهدة المسموحة لكل طالب (0 = بلا حد)</label><input id="lmaxv" type="number" dir="ltr" min="0" value="5">
     <label>الترتيب</label><input id="lorder" type="number" dir="ltr" value="${(lectures||[]).length+1}">
     <button class="btn" onclick="addLecture()">إضافة</button>
   </div>
@@ -828,7 +916,7 @@ async function viewAdmin(user, role){
     ${lecRows ? `<table><tr><th>#</th><th>العنوان</th><th></th></tr>${lecRows}</table>` : '<p class="small">مفيش محاضرات لسه.</p>'}
   </div>`);
   if(!isMain){
-    ['courseCard','manualCard','resetCard','staffCard'].forEach(i=>{ const e=document.getElementById(i); if(e) e.remove(); });
+    ['courseCard','manualCard','resetCard','staffCard','backupCard'].forEach(i=>{ const e=document.getElementById(i); if(e) e.remove(); });
     const cards=[...document.querySelectorAll('.card')].filter(c=>/تغيير كلمة سر الأدمن|إضافة محاضرة|المحاضرات الحالية/.test(c.innerText)); cards.forEach(c=>c.remove());
     document.querySelectorAll('button.red').forEach(b=>{ if(/deleteStudent/.test(b.getAttribute('onclick')||'')) b.remove(); });
     const hd=document.querySelector('.card h2'); if(hd) hd.insertAdjacentHTML('afterend','<p class="small">حسابك: مساعد أدمن</p>');
@@ -941,7 +1029,10 @@ async function addLecture(){
   m('m', msgBox('جاري الرفع... متقفلش الصفحة','info'));
   const s1 = await uploadOrLink('lfile','lurl','s1'); if(s1.err){ m('m', msgBox(s1.err,'err')); return; }
   const s2 = await uploadOrLink('lfile2','lurl2','s2'); if(s2.err){ m('m', msgBox(s2.err,'err')); return; }
-  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0 });
+  let durSec = Math.round(parseFloat(v('ldur')||'0')*60)||null;
+  const f1=document.getElementById('lfile').files[0];
+  if(!durSec && f1){ durSec = await new Promise(r=>{ const vv=document.createElement('video'); vv.preload='metadata'; vv.onloadedmetadata=()=>r(Math.round(vv.duration)||null); vv.onerror=()=>r(null); vv.src=URL.createObjectURL(f1); setTimeout(()=>r(null),8000); }); }
+  const { error } = await sb.from('lectures').insert({ title: t, description: v('ldesc'), video_url: s1.val, video_url2: s2.val, sort_order: parseInt(v('lorder'))||0, duration_sec: durSec, max_views: Math.max(0, isNaN(parseInt(v('lmaxv')))?5:parseInt(v('lmaxv'))) });
   if(error){ m('m', msgBox(h(error.message),'err')); return; }
   await alog_('إضافة محاضرة','-',t);
   route();
@@ -951,7 +1042,32 @@ async function delLecture(id){ if(!confirm('متأكد من حذف المحاض�
 let _loaderT=0;
 function showLoader(){ const l=document.getElementById('loader'); l.classList.remove('off'); _loaderT=Date.now(); }
 function hideLoader(){ const l=document.getElementById('loader'); const w=Math.max(0,500-(Date.now()-_loaderT)); setTimeout(()=>l.classList.add('off'),w); }
-async function route(){ showLoader(); try{ return await _route(); } finally{ hideLoader(); } }
+const SW_URL = location.pathname.indexOf('/nav-preview')===0 ? '/nav-preview/sw.js' : '/sw.js';
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register(SW_URL).catch(()=>{}); }); }
+let _ip=null; window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); _ip=e; const b=document.getElementById('instBtn'); if(b) b.classList.remove('hidden'); });
+window.addEventListener('appinstalled',()=>{ const c=document.getElementById('installCard'); if(c) c.remove(); });
+function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }
+function maybeInstallHint(){
+  try{ const h=document.getElementById('instHdr'); if(h) h.classList.toggle('hidden', isStandalone()); }catch(e){}
+  try{
+    if(isStandalone()||studentView!=='home'||document.getElementById('topupCard')||document.getElementById('installCard')||localStorage.getItem('instHide')) return;
+    const app=document.getElementById('app'); if(!app||!document.getElementById('tabs')) return;
+    const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    const body = '<button class="btn" style="margin-top:8px" onclick="doInstall()">📲 ثبّت التطبيق</button>';
+    app.insertAdjacentHTML('afterbegin','<div class="card" id="installCard" style="border-color:rgba(251,191,36,.5)"><h3>📲 ثبّت المنصة كتطبيق على موبايلك</h3><p class="small" style="margin:6px 0">هتلاقي أيقونة AW على الشاشة الرئيسية وتفتح زي أي تطبيق.</p>'+body+'<button class="btn ghost" style="margin-top:8px" onclick="localStorage.setItem(\'instHide\',\'1\');this.closest(\'.card\').remove()">مش دلوقتي</button></div>');
+    if(_ip){ const b=document.getElementById('instBtn'); if(b) b.classList.remove('hidden'); }
+  }catch(e){}
+}
+function showInstallSteps(){
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const steps = ios ? '<ol style="text-align:right;line-height:2;padding-inline-start:22px"><li>افتح الموقع من متصفح <b>Safari</b>.</li><li>اضغط زرار المشاركة <b>⬆️</b> (تحت في النص).</li><li>اختار <b>"إضافة إلى الشاشة الرئيسية"</b> (Add to Home Screen).</li><li>اضغط <b>إضافة</b>، وهتلاقي أيقونة AW على الشاشة.</li></ol>'
+    : '<ol style="text-align:right;line-height:2;padding-inline-start:22px"><li>افتح قايمة المتصفح <b>⋮</b> (فوق).</li><li>اختار <b>"تثبيت التطبيق"</b> أو "إضافة إلى الشاشة الرئيسية".</li><li>اضغط <b>تثبيت</b>.</li></ol>';
+  const ov=document.createElement('div'); ov.id='instModal'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center"><h2 style="margin-bottom:10px">📲 ثبّت المنصة كتطبيق</h2>'+steps+'<button class="btn" style="margin-top:12px;width:100%" onclick="document.getElementById(\'instModal\').remove()">تمام</button></div>';
+  document.body.appendChild(ov);
+}
+async function doInstall(){ if(_ip){ _ip.prompt(); try{ await _ip.userChoice; }catch(e){} _ip=null; const c=document.getElementById('installCard'); if(c) c.remove(); } else showInstallSteps(); }
+async function route(){ showLoader(); try{ return await _route(); } finally{ hideLoader(); maybeInstallHint(); } }
 async function _route(){
   const s = await getSession();
   document.getElementById('logoutBtn').classList.toggle('hidden', !s);
