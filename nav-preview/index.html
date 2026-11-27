@@ -628,14 +628,14 @@ const _lecTracked = {};
 function wrapWM(id, box){
   const el=box.querySelector('video')||box.querySelector('iframe'); if(!el||el.parentNode.classList.contains('vwrap')) return;
   if(el.tagName==='IFRAME'){ el.removeAttribute('allowfullscreen'); }
-  else { el.setAttribute('controlsList','nofullscreen nodownload'); el.setAttribute('disablePictureInPicture',''); el.setAttribute('playsinline',''); el.oncontextmenu=()=>false; }
+  else { el.setAttribute('controlsList','nofullscreen nodownload'); el.setAttribute('disablePictureInPicture',''); el.setAttribute('playsinline',''); try{ el.controlsList.add('nofullscreen'); el.controlsList.add('nodownload'); }catch(e){} el.oncontextmenu=()=>false; }
   const w=document.createElement('div'); w.className='vwrap'; w.style.cssText='position:relative;background:#000;border-radius:14px;overflow:hidden';
   el.parentNode.insertBefore(w, el); w.appendChild(el);
   const t=document.createElement('div'); t.className='wm'; t.textContent=window._wmText||'';
   t.style.cssText='position:absolute;z-index:3;pointer-events:none;direction:ltr;font:700 clamp(12px,2.2vw,18px) Tahoma,Arial;color:rgba(255,255,255,.3);text-shadow:0 0 3px rgba(0,0,0,.6);transition:top 2.5s ease,left 2.5s ease;white-space:nowrap;top:10%;left:10%';
   w.appendChild(t);
   const mv=()=>{ t.style.top=(8+Math.random()*78)+'%'; t.style.left=(4+Math.random()*60)+'%'; }; mv(); const iv=setInterval(()=>{ if(!document.body.contains(w)) clearInterval(iv); else mv(); },4500);
-  const fb=document.createElement('button'); fb.className='btn ghost'; fb.textContent='⛶ ملء الشاشة'; fb.style.cssText='position:absolute;z-index:4;bottom:44px;left:8px;padding:4px 10px;font-size:12px;opacity:.85';
+  const fb=document.createElement('button'); fb.className='btn ghost'; fb.textContent='⛶ ملء الشاشة'; fb.style.cssText='position:absolute;z-index:4;top:8px;right:8px;padding:4px 10px;font-size:12px;opacity:.85';
   fb.onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else (w.requestFullscreen||w.webkitRequestFullscreen||function(){}).call(w); }; w.appendChild(fb);
 }
 async function lecDone(id, dur){
